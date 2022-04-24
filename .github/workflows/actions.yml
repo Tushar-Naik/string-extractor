@@ -32,22 +32,8 @@ jobs:
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-      - name: Debug
-        run: cat ~/.m2/settings.xml | grep username
       - name: Publish package
         run: mvn clean deploy -X
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - shell: bash
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_USERNAME2: ${{ secrets.OSSRH_USERNAME2 }}
-        run: |
-          echo "Helloo"
-          echo "The username is : $MAVEN_USERNAME"
-          echo "The invalid username is : $MAVEN_USERNAME2"
-          echo "Checkign the username : ${{ secrets.OSSRH_USERNAME }}"

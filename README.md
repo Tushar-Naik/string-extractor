@@ -1,4 +1,7 @@
-# String Extractor
+# String Extractor 
+
+[![Java CI with Maven](https://github.com/tushar-naik/string-extractor/actions/workflows/actions.yml/badge.svg)](https://github.com/tushar-naik/string-extractor/actions/workflows/actions.yml)
+[![Snapshot](https://img.shields.io/nexus/s/io.github.tushar-naik/string-extractor?server=https%3A%2F%2Fs01.oss.sonatype.org)](https://img.shields.io/nexus/s/io.github.tushar-naik/string-extractor?server=https%3A%2F%2Fs01.oss.sonatype.org)
 
 A simple utility that can be used to extract values from a string using a compiled blueprint
 
@@ -32,15 +35,6 @@ Use the following dependency in your code.
     <artifactId>string-extractor</artifactId>
     <version>1.0.0</version>
 </dependency>
-```
-
-You might have to include the following repository
-```
-<repository>
-    <id>clojars</id>
-    <name>Clojars repository</name>
-    <url>https://clojars.org/repo</url>
-</repository>
 ```
 
 ### Usage
