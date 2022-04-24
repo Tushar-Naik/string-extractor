@@ -10,14 +10,14 @@ A simple utility that can be used to extract values from a string using a compil
 
 ### Why?
 The following example should give you an idea of what an extraction is:<br>
-Blueprint: `My name is ${{name:[A-Za-z]+}}` <br>
-Input String: `My name is Tushar` <br>
-Output: The ExtractionResult would look like so (This is just a json representation of the `ExtractionResult` object): <br>
+**Blueprint:** `This is ${{name:[A-Za-z]+}}` <br>
+**Input String:** `This is America` <br>
+**Output:** The ExtractionResult would look like so (This is just a json representation of the `ExtractionResult` object): <br>
 ```json
 {
-  "extractedString": "My name is ",
+  "extractedString": "This is ",
   "extractions": {
-    "name": "Tushar"
+    "name": "America"
   },
   "error": false
 }
@@ -25,7 +25,7 @@ Output: The ExtractionResult would look like so (This is just a json representat
 
 #### Why would this be required?
 - Transformation of jmx metrics
-  - org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3 into name->org.apache.kafka.common.metrics.kafka-sink_ and host->prd-001.org.dc.node3 
+  - `org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3` into <br> `name=org.apache.kafka.common.metrics.kafka-sink_` and `host=prd-001.org.dc.node3` 
      
 
 ### Features
