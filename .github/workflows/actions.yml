@@ -39,8 +39,6 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco/
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     needs: compile
