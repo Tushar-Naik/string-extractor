@@ -104,25 +104,29 @@ class StringExtractorTest {
                              "This is har. Who are you?",
                              ImmutableMap.of("name", "Tus")),
 
+                /* check if remains are sent back */
+                Arguments.of("May you ${{what:[A-Za-z]+ [A-Za-z]+ [A-Za-z]+}} days of your life",
+                             "May you live all the days of your life",
+                             "May you  days of your life",
+                             ImmutableMap.of("what", "live all the")),
+
                 /* regex with {,} characters */
-                Arguments.of("com.phonepe.drove.executor.containers.api.instance.${{component:[^.]+}}"
+                Arguments.of("com.org.app.executor.containers.api.instance.${{component:[^.]+}}"
                                      + ".cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2.cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance..cpu_absolute_per_ms",
+                             "com.org.app.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2"
+                                     + ".cpu_absolute_per_ms",
+                             "com.org.app.executor.containers.api.instance..cpu_absolute_per_ms",
                              ImmutableMap.of("component", "99db78be-08de-4e92-a93a-ca2dfac09bc2")),
 
                 /* regex with {,} characters */
-                Arguments.of("com.phonepe.drove.executor.containers.api.instance.${{component:[^.]+\\.}}"
+                Arguments.of("com.org.app.executor.containers.api.instance.${{component:[^.]+\\.}}"
                                      + "cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2"
+                             "com.org.app.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2"
                                      + ".cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance.cpu_absolute_per_ms",
+                             "com.org.app.executor.containers.api.instance.cpu_absolute_per_ms",
                              ImmutableMap.of("component", "99db78be-08de-4e92-a93a-ca2dfac09bc2."))
 
                         );
-
-        //stg-lucyllap-LlapDaemonExecutorMetrics.LlapDaemonExecutorMetrics-stg-hdplucy124_phonepe_nb6.ExecutorAvailableFreeSlots
-        //stg-lucyllap-LlapDaemonExecutorMetrics.LlapDaemonExecutorMetrics.ExecutorAvailableFreeSlots
     }
 
     public static Stream<Arguments> exceptionScenarioBlueprints() {

@@ -14,150 +14,117 @@
 
 package com.github.tusharnaik.stringextractor;
 
-import com.google.common.collect.ImmutableMap;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
+@Slf4j
 class StringExtractorPerfTest {
 
     @ParameterizedTest
-    @MethodSource("happyScenarioBlueprints")
-    void testHappyScenarios(final String blueprint,
-                            final String source,
-                            final String result,
-                            final Map<String, Object> extractedMap) throws BlueprintParseError {
+    @MethodSource("evaluations")
+    void perfTest(final int numberOfEvaluations,
+                  final String blueprint,
+                  final String source,
+                  final int maxEvalTimeExpected) throws BlueprintParseError {
+        PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
+        final StringExtractor stringExtractor = new StringExtractor(blueprint);
+        float evaluationTime = performanceEvaluator
+                .evaluateTime(numberOfEvaluations, () -> stringExtractor.extractFrom(source));
+        System.out.printf("%s evaluations took %fms", numberOfEvaluations, evaluationTime);
+        Assertions.assertTrue(evaluationTime < maxEvalTimeExpected);
+    }
+
+    private static Stream<Arguments> evaluations() {
+        return Stream.of(
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}}",
+                             "A successful",
+                             100),
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}}",
+                             "A successful man ",
+                             100),
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}}",
+                             "A successful man is one",
+                             100),
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
+                                     + "${{where:[A-Za-z]+}}",
+                             "A successful man is one who can lay",
+                             100),
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
+                                     + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}}",
+                             "A successful man is one who can lay a firm foundation",
+                             100),
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
+                                     + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}} with the "
+                                     + "${{what3:[A-Za-z]+}}",
+                             "A successful man is one who can lay a firm foundation with the bricks",
+                             100),
+                Arguments.of(10000,
+                             "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
+                                     + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}} with the "
+                                     + "${{what3:[A-Za-z]+}} others have thrown at ${{whom:[A-Za-z]+ [A-Za-z]+}}",
+                             "A successful man is one who can lay a firm foundation with the bricks others have thrown at him",
+                             100)
+                );
+    }
+
+    @Test
+    void testPerformance() throws BlueprintParseError {
+        String blueprint = "This is ${{name:[A-Za-z]+}}. You are ${{adjective:[A-Za-z]+}} and "
+                + "${{adjective2:[A-Za-z]+}} ";
+        PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
+        float evaluation = performanceEvaluator
+                .evaluateTime(100000,
+                              () -> {
+                                     try {
+                                         final StringExtractor stringExtractor = new StringExtractor(blueprint);
+                                         stringExtractor.extractFrom("This is Tushar. You are Good");
+                                     } catch (BlueprintParseError e) {
+                                         log.error("Error parsing blueprint", e);
+                                     }
+                                 });
+
+        evaluation = performanceEvaluator
+                .evaluateTime(100000,
+                              () -> {
+                                     try {
+                                         final StringExtractor stringExtractor = new StringExtractor(blueprint);
+                                         stringExtractor.extractFrom("This is Tushar. You are Good and kind");
+                                     } catch (BlueprintParseError e) {
+                                         log.error("Error parsing blueprint", e);
+                                     }
+                                 });
+        System.out.println("100000 evaluations took = " + evaluation);
 
         final StringExtractor stringExtractor = new StringExtractor(blueprint);
-        final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
-        assertEquals(result, extractionResult.getExtractedString());
-        assertMapEquals(extractedMap, extractionResult.getExtractions());
-        assertFalse(extractionResult.isError());
-    }
+        evaluation = performanceEvaluator
+                .evaluateTime(1000000,
+                              () -> {
+                                     stringExtractor.extractFrom("This is Tushar. You are Good and kind");
+                                 });
+        System.out.println("100000 evaluations took = " + evaluation);
 
-    @ParameterizedTest
-    @MethodSource("exceptionScenarioBlueprints")
-    void testExtractorParseException(final String blueprint,
-                                     final BlueprintParseErrorCode blueprintParseErrorCode) {
-
-        final BlueprintParseError blueprintParseError
-                = assertThrows(BlueprintParseError.class, () -> new StringExtractor(blueprint));
-        assertEquals(blueprintParseErrorCode, blueprintParseError.getBlueprintParseErrorCode());
-    }
-
-    @ParameterizedTest
-    @MethodSource("noMatchBlueprints")
-    void testNoMatchUnhappyScenarios(final String blueprint,
-                                     final String source) throws BlueprintParseError {
-        final StringExtractor stringExtractor = new StringExtractor(blueprint, true);
-        final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
-        assertTrue(extractionResult.isError());
-        assertNull(extractionResult.getExtractions());
-        assertNull(extractionResult.getExtractedString());
-    }
-
-    public static Stream<Arguments> happyScenarioBlueprints() {
-        return Stream.of(
-                /* one variable extraction */
-                Arguments.of("This is ${{name:[A-Za-z]+}}",
-                             "This is Tushar",
-                             "This is ",
-                             ImmutableMap.of("name", "Tushar")),
-
-                /* two variable extraction */
-                Arguments.of("This is ${{name:[A-Za-z]+}}. You are ${{adjective:[A-Za-z]+}}",
-                             "This is Tushar. You are Good",
-                             "This is . You are ",
-                             ImmutableMap.of("name", "Tushar", "adjective", "Good")),
-
-                /* start with a variable */
-                Arguments.of("${{name:[A-Za-z]+}} is my name.",
-                             "Tushar is my name.",
-                             " is my name.",
-                             ImmutableMap.of("name", "Tushar")),
-
-                /* one variable in the middle */
-                Arguments.of("This is ${{name:[A-Za-z]+}}. Who are you",
-                             "This is Tushar. Who are you",
-                             "This is . Who are you",
-                             ImmutableMap.of("name", "Tushar")),
-
-                /* regex with {,} characters */
-                Arguments.of("This is ${{name:[A-Za-z]{3}}}har. Who are you",
-                             "This is Tushar. Who are you",
-                             "This is har. Who are you",
-                             ImmutableMap.of("name", "Tus")),
-
-                /* check if remains are sent back */
-                Arguments.of("This is ${{name:[A-Za-z]{3}}}har. ",
-                             "This is Tushar. Who are you?",
-                             "This is har. Who are you?",
-                             ImmutableMap.of("name", "Tus")),
-
-                /* regex with {,} characters */
-                Arguments.of("com.phonepe.drove.executor.containers.api.instance.${{component:[^.]+}}"
-                                     + ".cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2.cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance..cpu_absolute_per_ms",
-                             ImmutableMap.of("component", "99db78be-08de-4e92-a93a-ca2dfac09bc2")),
-
-                /* regex with {,} characters */
-                Arguments.of("com.phonepe.drove.executor.containers.api.instance.${{component:[^.]+\\.}}"
-                                     + "cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2"
-                                     + ".cpu_absolute_per_ms",
-                             "com.phonepe.drove.executor.containers.api.instance.cpu_absolute_per_ms",
-                             ImmutableMap.of("component", "99db78be-08de-4e92-a93a-ca2dfac09bc2."))
-
-                        );
-
-        //stg-lucyllap-LlapDaemonExecutorMetrics.LlapDaemonExecutorMetrics-stg-hdplucy124_phonepe_nb6.ExecutorAvailableFreeSlots
-        //stg-lucyllap-LlapDaemonExecutorMetrics.LlapDaemonExecutorMetrics.ExecutorAvailableFreeSlots
-    }
-
-    public static Stream<Arguments> exceptionScenarioBlueprints() {
-        return Stream.of(
-                Arguments.of("This is ${{:[A-Za-z]+}}", BlueprintParseErrorCode.EMPTY_VARIABLE_NAME),
-                Arguments.of("This is ${{}}. You are ${{adjective:[A-Za-z]+}}",
-                             BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX),
-                Arguments.of("This is ${{name::[A-Z]+}}", BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION),
-                Arguments.of("This is ${{name:[A-Z]}}, you are ${{name2}}", BlueprintParseErrorCode.EMPTY_REGEX),
-                Arguments.of("This is ${{name:[A-Z]}}, you are ${{name2:}}", BlueprintParseErrorCode.EMPTY_REGEX),
-                Arguments.of("This is ${{name:[A-Z}}, you are ${{name2:[a]}}", BlueprintParseErrorCode.PATTERN_SYNTAX)
-                        );
-    }
-
-    public static Stream<Arguments> noMatchBlueprints() {
-        return Stream.of(
-                Arguments.of("This is ${{variable:[A-Za-z]+}}", "This is some shit"),
-                Arguments.of("${{blue:[A-Za-z]+}}", "This is "),
-                Arguments.of("Some BS ${{blue:[A-Za-z]+}}", "This is who")
-                        );
-    }
-
-    private static void assertMapEquals(final Map<String, Object> expected,
-                                        final Map<String, Object> actual) {
-        if (!areEqual(expected, actual)) {
-            fail("Expected: " + expected + " actual:" + actual);
-        }
-    }
-
-    private static boolean areEqual(final Map<String, Object> first,
-                                    final Map<String, Object> second) {
-        if (first.size() != second.size()) {
-            return false;
-        }
-        return first.entrySet().stream()
-                .allMatch(e -> e.getValue().equals(second.get(e.getKey())));
+        evaluation = performanceEvaluator
+                .evaluateTime(1000000,
+                              () -> {
+                                     try {
+                                         final StringExtractor stringExtractors = new StringExtractor(blueprint);
+                                         stringExtractor.extractFrom("This is Tushar. You are Good and kind");
+                                     } catch (BlueprintParseError e) {
+                                         log.error("Error parsing blueprint", e);
+                                     }
+                                 });
+        System.out.println("100000 evaluations took = " + evaluation);
     }
 }
