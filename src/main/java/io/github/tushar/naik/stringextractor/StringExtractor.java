@@ -42,6 +42,17 @@ public class StringExtractor {
             return true;
         }
     };
+    private static final ParsedComponentVisitor<Boolean> IS_VARIABLE = new ParsedComponentVisitor<Boolean>() {
+        @Override
+        public Boolean visit(final ExactMatchComponent exactMatchComponent) {
+            return false;
+        }
+
+        @Override
+        public Boolean visit(final VariableComponent variableComponent) {
+            return true;
+        }
+    };
 
     public StringExtractor(final String blueprint) throws BlueprintParseError {
         this(blueprint, false);
@@ -235,5 +246,9 @@ public class StringExtractor {
                 };
             }
         };
+    }
+
+    public long numberOfVariables() {
+        return parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
     }
 }

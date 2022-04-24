@@ -16,8 +16,14 @@ jobs:
           distribution: 'temurin'
           java-version: '8'
           cache: maven
-      - name: Build with Maven
+      - name: Compile
         run: mvn compile
+      - name: Test
+        run: mvn test
+      - name: Generate JaCoCo Badge
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          generate-branches-badge: true
 
   publish:
     needs: compile

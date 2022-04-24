@@ -36,7 +36,9 @@ class StringExtractorPerfTest {
         final StringExtractor stringExtractor = new StringExtractor(blueprint);
         float evaluationTime = performanceEvaluator
                 .evaluateTime(numberOfEvaluations, () -> stringExtractor.extractFrom(source));
-        System.out.printf("%s evaluations took %fms", numberOfEvaluations, evaluationTime);
+        System.out.printf("%s evaluations for blueprint with %d variables took %fms", numberOfEvaluations,
+                          stringExtractor.numberOfVariables(),
+                          evaluationTime);
         Assertions.assertTrue(evaluationTime < maxEvalTimeExpected);
     }
 
@@ -45,38 +47,38 @@ class StringExtractorPerfTest {
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}}",
                              "A successful",
-                             200),
+                             1000),
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}}",
                              "A successful man ",
-                             200),
+                             1000),
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}}",
                              "A successful man is one",
-                             200),
+                             1000),
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}}",
                              "A successful man is one who can lay",
-                             500),
+                             1000),
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}}",
                              "A successful man is one who can lay a firm foundation",
-                             500),
+                             1000),
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}} with the "
                                      + "${{what3:[A-Za-z]+}}",
                              "A successful man is one who can lay a firm foundation with the bricks",
-                             500),
+                             1000),
                 Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}} with the "
                                      + "${{what3:[A-Za-z]+}} others have thrown at ${{whom:[A-Za-z]+ [A-Za-z]+}}",
                              "A successful man is one who can lay a firm foundation with the bricks others have "
                                      + "thrown at him",
-                             500),
+                             1000),
 
                 /* no regex - should be really fast */
                 Arguments.of(100000,
