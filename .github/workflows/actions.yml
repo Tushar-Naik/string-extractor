@@ -41,7 +41,7 @@ jobs:
           path: target/site/jacoco/
 
   publish:
-    needs: compile
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
