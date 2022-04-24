@@ -12,17 +12,21 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
 
-import java.util.regex.Pattern;
+@Getter
+class ExactMatchComponent extends ParsedComponent {
+    private final String characters;
 
-@Value
-@Builder
-class Variable {
-    String variableName;
-    String regex;
-    Pattern pattern;
+    public ExactMatchComponent(final String characters) {
+        super(ParsedComponentType.EXACT_MATCH);
+        this.characters = characters;
+    }
+
+    @Override
+    public <T> T accept(final ParsedComponentVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

@@ -12,22 +12,9 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
-
-import lombok.Builder;
-import lombok.Value;
-
-import java.util.Map;
-
-@Value
-@Builder
-public class ExtractionResult {
-    String extractedString;
-    Map<String, Object> extractions;
-    boolean error;
-
-    public static ExtractionResult error() {
-        return ExtractionResult.builder().error(true).build();
-    }
+enum ParsedComponentType {
+    EXACT_MATCH,
+    VARIABLE
 }

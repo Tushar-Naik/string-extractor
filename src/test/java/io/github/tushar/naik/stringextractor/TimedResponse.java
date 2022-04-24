@@ -1,4 +1,4 @@
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

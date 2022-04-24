@@ -1,13 +1,13 @@
 # String Extractor
 
-A utility that can be used to extract values from a string using a compiled blueprint
+A simple utility that can be used to extract values from a string using a compiled blueprint
 
 ### Features
 - Supports Regexes
 - Proper error handling
 - Creates multiple  
 
-### Sample
+### Samples
 
 Blueprint: `My name is ${{name:[A-Za-z]+}}` <br>
 Input String: `My name is Tushar` <br>
@@ -20,7 +20,6 @@ Output: Represented as a json, the ExtractionResult would look like: <br>
   },
   "error": false
 }
-
 ```
 
 
@@ -29,9 +28,9 @@ Output: Represented as a json, the ExtractionResult would look like: <br>
 Use the following dependency in your code.
 ```
 <dependency>
-    <groupId>com.github.tusharnaik</groupId>
+    <groupId>io.github.tushar-naik</groupId>
     <artifactId>string-extractor</artifactId>
-    <version>1.0</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 

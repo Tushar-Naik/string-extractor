@@ -12,7 +12,7 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;

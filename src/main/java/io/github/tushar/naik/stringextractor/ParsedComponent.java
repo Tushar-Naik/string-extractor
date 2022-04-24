@@ -12,10 +12,17 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
-public interface ParsedComponentVisitor<T> {
-    T visit(ExactMatchComponent exactMatchComponent);
+import lombok.Getter;
 
-    T visit(VariableComponent variableComponent);
+abstract class ParsedComponent {
+    @Getter
+    private final ParsedComponentType type;
+
+    protected ParsedComponent(final ParsedComponentType type) {
+        this.type = type;
+    }
+
+    public abstract <T> T accept(ParsedComponentVisitor<T> visitor);
 }

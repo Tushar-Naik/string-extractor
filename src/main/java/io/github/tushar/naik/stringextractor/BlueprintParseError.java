@@ -12,21 +12,21 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
 import lombok.Getter;
 
-@Getter
-class ExactMatchComponent extends ParsedComponent {
-    private final String characters;
+public class BlueprintParseError extends Exception {
+    @Getter
+    private final BlueprintParseErrorCode blueprintParseErrorCode;
 
-    public ExactMatchComponent(final String characters) {
-        super(ParsedComponentType.EXACT_MATCH);
-        this.characters = characters;
+    public BlueprintParseError(final BlueprintParseErrorCode blueprintParseErrorCode) {
+        super(blueprintParseErrorCode.getErrorMessage());
+        this.blueprintParseErrorCode = blueprintParseErrorCode;
     }
 
-    @Override
-    public <T> T accept(final ParsedComponentVisitor<T> visitor) {
-        return visitor.visit(this);
+    public BlueprintParseError(final BlueprintParseErrorCode blueprintParseErrorCode, Throwable t) {
+        super(blueprintParseErrorCode.getErrorMessage(), t);
+        this.blueprintParseErrorCode = blueprintParseErrorCode;
     }
 }

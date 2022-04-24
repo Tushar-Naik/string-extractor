@@ -12,21 +12,10 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
-import lombok.Getter;
+public interface ParsedComponentVisitor<T> {
+    T visit(ExactMatchComponent exactMatchComponent);
 
-class VariableComponent extends ParsedComponent {
-    @Getter
-    private final Variable variable;
-
-    public VariableComponent(final Variable variable) {
-        super(ParsedComponentType.VARIABLE);
-        this.variable = variable;
-    }
-
-    @Override
-    public <T> T accept(final ParsedComponentVisitor<T> visitor) {
-        return visitor.visit(this);
-    }
+    T visit(VariableComponent variableComponent);
 }

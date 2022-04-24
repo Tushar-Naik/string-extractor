@@ -12,17 +12,21 @@
  * under the License.
  */
 
-package com.github.tusharnaik.stringextractor;
+package io.github.tushar.naik.stringextractor;
 
 import lombok.Getter;
 
-abstract class ParsedComponent {
+class VariableComponent extends ParsedComponent {
     @Getter
-    private final ParsedComponentType type;
+    private final Variable variable;
 
-    protected ParsedComponent(final ParsedComponentType type) {
-        this.type = type;
+    public VariableComponent(final Variable variable) {
+        super(ParsedComponentType.VARIABLE);
+        this.variable = variable;
     }
 
-    public abstract <T> T accept(ParsedComponentVisitor<T> visitor);
+    @Override
+    public <T> T accept(final ParsedComponentVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }
