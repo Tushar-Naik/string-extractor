@@ -19,6 +19,7 @@ jobs:
       - name: Build with Maven
         run: mvn compile
   publish:
+    needs: compile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -35,3 +36,11 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - shell: bash
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        run: |
+          echo "$MAVEN_USERNAME"
