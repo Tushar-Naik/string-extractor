@@ -1,4 +1,4 @@
-name: Actions to build
+name: Actions for CI
 
 on:
   push:
@@ -42,5 +42,9 @@ jobs:
       - shell: bash
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_USERNAME2: ${{ secrets.OSSRH_USERNAME2 }}
         run: |
-          echo "$MAVEN_USERNAME"
+          echo "Helloo"
+          echo "The username is : $MAVEN_USERNAME"
+          echo "The invalid username is : $MAVEN_USERNAME2"
+          echo "Checkign the username : ${{ secrets.OSSRH_USERNAME }}"
