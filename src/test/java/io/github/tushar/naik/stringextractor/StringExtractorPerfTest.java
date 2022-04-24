@@ -84,7 +84,7 @@ class StringExtractorPerfTest {
                 Arguments.of(100000,
                              "org.apache.kafka.common.metrics.kafka-sink_${{host:}}",
                              "org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3",
-                             20)
+                             100)
                         );
     }
 
@@ -94,20 +94,15 @@ class StringExtractorPerfTest {
         String metric = "org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3";
 
         /* this is expensive */
-        final long timeForEvaluationWithSplit = performanceEvaluator.evaluateTime(100000, () -> {
-            metric.split("\\.");
-        });
+        final long timeForEvaluationWithSplit = performanceEvaluator.evaluateTime(100000,
+                                                                                  () -> metric.split("\\."));
         System.out.println("split = " + timeForEvaluationWithSplit);
 
         final StringExtractor stringExtractor = new StringExtractor(
                 "org.apache.kafka.common.metrics.kafka-sink_${{host:}}");
 
-        final long timeForEvaluation = performanceEvaluator.evaluateTime(100000, new Runnable() {
-            @Override
-            public void run() {
-                stringExtractor.extractFrom(metric);
-            }
-        });
+        final long timeForEvaluation = performanceEvaluator.evaluateTime(100000,
+                                                                         () -> stringExtractor.extractFrom(metric));
         System.out.println("stringExtractor = " + timeForEvaluation);
         Assertions.assertTrue(timeForEvaluation < timeForEvaluationWithSplit);
 
