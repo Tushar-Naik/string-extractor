@@ -26,6 +26,22 @@ public class StringExtractor {
     private final String remains;
     private final boolean failOnStringRemainingAfterExtraction;
     private final List<ParsedComponent> parsedComponents;
+    private static final VariableVisitor<Boolean> IS_LAST_VARIABLE = new VariableVisitor<Boolean>() {
+        @Override
+        public Boolean visit(final RegexMatchVariable regexMatchVariable) {
+            return false;
+        }
+
+        @Override
+        public Boolean visit(final DiscardedVariable discardedVariable) {
+            return false;
+        }
+
+        @Override
+        public Boolean visit(final LastVariable lastVariable) {
+            return true;
+        }
+    };
 
     public StringExtractor(final String blueprint) throws BlueprintParseError {
         this(blueprint, false);
@@ -45,14 +61,21 @@ public class StringExtractor {
         this.failOnStringRemainingAfterExtraction = failOnStringRemainingAfterExtraction;
         this.parsedComponents = new ArrayList<>();
 
+        /* Just to be clear, I'm not proud of what the code below, need to move it to a proper language parser */
+
         final char[] chars = blueprint.toCharArray();
         final StringBuilder collected = new StringBuilder();
         final StringBuilder remainsBuilder = new StringBuilder();
         final StringBuilder variableName = new StringBuilder();
 
         boolean variableIsBeingExtracted = false;
+        boolean lastVariableInvolved = false;
         int index = 0;
         while (index < chars.length) {
+            if (lastVariableInvolved) {
+                /* if there was a LastVariable without regex, then there should be no more collected string */
+                throw new BlueprintParseError(BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE);
+            }
             if (isVariableStart(variableStart, variablePrefix, chars, index)) {
                 if (collected.length() != 0) {
                     final String collectedString = collected.toString();
@@ -60,7 +83,6 @@ public class StringExtractor {
                     remainsBuilder.append(collectedString);
                     Utils.clearStringBuilder(collected);
                 }
-
                 variableIsBeingExtracted = true;
                 index += 3; /* skip both, the start and the prefix characters */
                 continue;
@@ -72,7 +94,9 @@ public class StringExtractor {
                 variableIsBeingExtracted = false;
                 Utils.clearStringBuilder(variableName);
                 index += 2;
-
+                if (variable.accept(IS_LAST_VARIABLE)) {
+                    lastVariableInvolved = true;
+                }
             } else if (variableIsBeingExtracted) {
                 variableName.append(chars[index]);
                 index++;
@@ -81,6 +105,7 @@ public class StringExtractor {
                 index++;
             }
         }
+
         /* don't forget the remaining collected string */
         if (collected.length() != 0) {
             final String collectedString = collected.toString();
@@ -114,20 +139,23 @@ public class StringExtractor {
             throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
         }
         final String[] variableRegexSplits = variableNameRegex.split(String.valueOf(regexSeparator));
-        if (variableRegexSplits.length > 2) {
+        if (variableRegexSplits.length > 2) { // handles ${{a:b:c}}
             throw new BlueprintParseError(BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION);
         }
-        if (Utils.isNullOrEmpty(variableRegexSplits[0])) {
-            throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_NAME);
+        if (variableRegexSplits.length == 0) { // handles ${{:}}
+            throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
+        }
+        if (Utils.isNullOrEmpty(variableRegexSplits[0]) && !Utils.isNullOrEmpty(variableRegexSplits[1])) {
+            final Pattern compile = Pattern.compile(variableRegexSplits[1]);
+            return new DiscardedVariable(variableRegexSplits[1], compile);
         }
         if (variableRegexSplits.length == 1) {
-            throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_REGEX);
+            return new LastVariable(variableRegexSplits[0]);
         }
 
         try {
             final Pattern compile = Pattern.compile(variableRegexSplits[1]);
-            return new Variable(variableRegexSplits[0], variableRegexSplits[1],
-                                compile);
+            return new RegexMatchVariable(variableRegexSplits[0], variableRegexSplits[1], compile);
         } catch (PatternSyntaxException exception) {
             throw new BlueprintParseError(BlueprintParseErrorCode.PATTERN_SYNTAX, exception);
         }
@@ -139,28 +167,7 @@ public class StringExtractor {
 
         for (final ParsedComponent parsedComponent : parsedComponents) {
             final String finalDrain = drain;
-            drain = parsedComponent.accept(new ParsedComponentVisitor<String>() {
-                @Override
-                public String visit(final ExactMatchComponent exactMatchComponent) {
-                    if (finalDrain.startsWith(exactMatchComponent.getCharacters())) {
-                        return finalDrain.substring(exactMatchComponent.getCharacters().length());
-                    }
-                    return null;
-                }
-
-                @Override
-                public String visit(final VariableComponent variableComponent) {
-                    final Variable variable = variableComponent.getVariable();
-                    final Pattern pattern = variable.getPattern();
-                    final Matcher matcher = pattern.matcher(finalDrain);
-                    if (matcher.find()) {
-                        final String firstMatch = matcher.group(0);
-                        extractions.put(variable.getVariableName(), firstMatch);
-                        return matcher.replaceFirst("");
-                    }
-                    return null;
-                }
-            });
+            drain = parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
             if (drain == null) {
                 return ExtractionResult.error();
             }
@@ -174,5 +181,59 @@ public class StringExtractor {
                 .extractedString(remains + drain)
                 .extractions(extractions)
                 .build();
+    }
+
+    private ParsedComponentVisitor<String> generateDrainFromComponent(final Map<String, Object> extractions,
+                                                                      final String finalDrain) {
+        return new ParsedComponentVisitor<String>() {
+            @Override
+            public String visit(final ExactMatchComponent exactMatchComponent) {
+                if (finalDrain.startsWith(exactMatchComponent.getCharacters())) {
+                    return finalDrain.substring(exactMatchComponent.getCharacters().length());
+                }
+                return null;
+            }
+
+            @Override
+            public String visit(final VariableComponent variableComponent) {
+                final Variable variable = variableComponent.getVariable();
+                return variable.accept(generateDrainByExtractingVariable());
+            }
+
+            private VariableVisitor<String> generateDrainByExtractingVariable() {
+                return new VariableVisitor<String>() {
+                    @Override
+                    public String visit(final RegexMatchVariable regexMatchVariable) {
+                        final Pattern pattern = regexMatchVariable.getPattern();
+                        final Matcher matcher = pattern.matcher(finalDrain);
+                        if (matcher.find()) {
+                            final String firstMatch = matcher.group(0);
+                            extractions.put(regexMatchVariable.getVariableName(), firstMatch);
+                            return matcher.replaceFirst("");
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public String visit(final DiscardedVariable discardedVariable) {
+                        final Pattern pattern = discardedVariable.getPattern();
+                        final Matcher matcher = pattern.matcher(finalDrain);
+                        if (matcher.find()) {
+                            return matcher.replaceFirst("");
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public String visit(final LastVariable lastVariable) {
+                        if (!Utils.isNullOrEmpty(finalDrain)) {
+                            extractions.put(lastVariable.getVariableName(), finalDrain);
+                            return "";
+                        }
+                        return null;
+                    }
+                };
+            }
+        };
     }
 }

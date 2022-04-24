@@ -42,89 +42,72 @@ class StringExtractorPerfTest {
 
     private static Stream<Arguments> evaluations() {
         return Stream.of(
-                Arguments.of(10000,
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}}",
                              "A successful",
-                             100),
-                Arguments.of(10000,
+                             200),
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}}",
                              "A successful man ",
-                             100),
-                Arguments.of(10000,
+                             200),
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}}",
                              "A successful man is one",
-                             100),
-                Arguments.of(10000,
+                             200),
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}}",
                              "A successful man is one who can lay",
-                             100),
-                Arguments.of(10000,
+                             500),
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}}",
                              "A successful man is one who can lay a firm foundation",
-                             100),
-                Arguments.of(10000,
+                             500),
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}} with the "
                                      + "${{what3:[A-Za-z]+}}",
                              "A successful man is one who can lay a firm foundation with the bricks",
-                             100),
-                Arguments.of(10000,
+                             500),
+                Arguments.of(100000,
                              "A ${{what:[A-Za-z]+}} ${{who:[A-Za-z]+}} is ${{one:[A-Za-z]+}} who can "
                                      + "${{where:[A-Za-z]+}} a ${{what2:[A-Za-z]+ [A-Za-z]+}} with the "
                                      + "${{what3:[A-Za-z]+}} others have thrown at ${{whom:[A-Za-z]+ [A-Za-z]+}}",
-                             "A successful man is one who can lay a firm foundation with the bricks others have thrown at him",
-                             100)
-                );
+                             "A successful man is one who can lay a firm foundation with the bricks others have "
+                                     + "thrown at him",
+                             500),
+
+                /* no regex - should be really fast */
+                Arguments.of(100000,
+                             "org.apache.kafka.common.metrics.kafka-sink_${{host:}}",
+                             "org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3",
+                             20)
+                        );
     }
 
     @Test
-    void testPerformance() throws BlueprintParseError {
-        String blueprint = "This is ${{name:[A-Za-z]+}}. You are ${{adjective:[A-Za-z]+}} and "
-                + "${{adjective2:[A-Za-z]+}} ";
-        PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
-        float evaluation = performanceEvaluator
-                .evaluateTime(100000,
-                              () -> {
-                                     try {
-                                         final StringExtractor stringExtractor = new StringExtractor(blueprint);
-                                         stringExtractor.extractFrom("This is Tushar. You are Good");
-                                     } catch (BlueprintParseError e) {
-                                         log.error("Error parsing blueprint", e);
-                                     }
-                                 });
+    void testSplitStrategyBeingSlow() throws BlueprintParseError {
+        final PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
+        String metric = "org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3";
 
-        evaluation = performanceEvaluator
-                .evaluateTime(100000,
-                              () -> {
-                                     try {
-                                         final StringExtractor stringExtractor = new StringExtractor(blueprint);
-                                         stringExtractor.extractFrom("This is Tushar. You are Good and kind");
-                                     } catch (BlueprintParseError e) {
-                                         log.error("Error parsing blueprint", e);
-                                     }
-                                 });
-        System.out.println("100000 evaluations took = " + evaluation);
+        /* this is expensive */
+        final long timeForEvaluationWithSplit = performanceEvaluator.evaluateTime(100000, () -> {
+            metric.split("\\.");
+        });
+        System.out.println("split = " + timeForEvaluationWithSplit);
 
-        final StringExtractor stringExtractor = new StringExtractor(blueprint);
-        evaluation = performanceEvaluator
-                .evaluateTime(1000000,
-                              () -> {
-                                     stringExtractor.extractFrom("This is Tushar. You are Good and kind");
-                                 });
-        System.out.println("100000 evaluations took = " + evaluation);
+        final StringExtractor stringExtractor = new StringExtractor(
+                "org.apache.kafka.common.metrics.kafka-sink_${{host:}}");
 
-        evaluation = performanceEvaluator
-                .evaluateTime(1000000,
-                              () -> {
-                                     try {
-                                         final StringExtractor stringExtractors = new StringExtractor(blueprint);
-                                         stringExtractor.extractFrom("This is Tushar. You are Good and kind");
-                                     } catch (BlueprintParseError e) {
-                                         log.error("Error parsing blueprint", e);
-                                     }
-                                 });
-        System.out.println("100000 evaluations took = " + evaluation);
+        final long timeForEvaluation = performanceEvaluator.evaluateTime(100000, new Runnable() {
+            @Override
+            public void run() {
+                stringExtractor.extractFrom(metric);
+            }
+        });
+        System.out.println("stringExtractor = " + timeForEvaluation);
+        Assertions.assertTrue(timeForEvaluation < timeForEvaluationWithSplit);
+
     }
 }

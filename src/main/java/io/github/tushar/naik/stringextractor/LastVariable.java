@@ -14,11 +14,16 @@
 
 package io.github.tushar.naik.stringextractor;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
-@Getter
-@AllArgsConstructor
-abstract class Variable {
-    abstract <T> T accept(VariableVisitor<T> visitor);
+@Value
+@EqualsAndHashCode(callSuper = true)
+class LastVariable extends Variable {
+    String variableName;
+
+    @Override
+    <T> T accept(final VariableVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

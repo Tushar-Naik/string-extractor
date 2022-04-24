@@ -1,5 +1,5 @@
 /*
- * Copyright 2022. Tushar Naik
+ * Copyright 2022. America Naik
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -70,39 +70,39 @@ class StringExtractorTest {
         return Stream.of(
                 /* one variable extraction */
                 Arguments.of("This is ${{name:[A-Za-z]+}}",
-                             "This is Tushar",
+                             "This is America",
                              "This is ",
-                             ImmutableMap.of("name", "Tushar")),
+                             ImmutableMap.of("name", "America")),
 
                 /* two variable extraction */
                 Arguments.of("This is ${{name:[A-Za-z]+}}. You are ${{adjective:[A-Za-z]+}}",
-                             "This is Tushar. You are Good",
+                             "This is America. You are Good",
                              "This is . You are ",
-                             ImmutableMap.of("name", "Tushar", "adjective", "Good")),
+                             ImmutableMap.of("name", "America", "adjective", "Good")),
 
                 /* start with a variable */
                 Arguments.of("${{name:[A-Za-z]+}} is my name.",
-                             "Tushar is my name.",
+                             "America is my name.",
                              " is my name.",
-                             ImmutableMap.of("name", "Tushar")),
+                             ImmutableMap.of("name", "America")),
 
                 /* one variable in the middle */
                 Arguments.of("This is ${{name:[A-Za-z]+}}. Who are you",
-                             "This is Tushar. Who are you",
+                             "This is America. Who are you",
                              "This is . Who are you",
-                             ImmutableMap.of("name", "Tushar")),
+                             ImmutableMap.of("name", "America")),
 
                 /* regex with {,} characters */
-                Arguments.of("This is ${{name:[A-Za-z]{3}}}har. Who are you",
-                             "This is Tushar. Who are you",
-                             "This is har. Who are you",
-                             ImmutableMap.of("name", "Tus")),
+                Arguments.of("This is ${{name:[A-Za-z]{3}}}rica.",
+                             "This is America.",
+                             "This is rica.",
+                             ImmutableMap.of("name", "Ame")),
 
                 /* check if remains are sent back */
-                Arguments.of("This is ${{name:[A-Za-z]{3}}}har. ",
-                             "This is Tushar. Who are you?",
-                             "This is har. Who are you?",
-                             ImmutableMap.of("name", "Tus")),
+                Arguments.of("This is ${{name:[A-Za-z]{3}}}rica. ",
+                             "This is America. Who are you?",
+                             "This is rica. Who are you?",
+                             ImmutableMap.of("name", "Ame")),
 
                 /* check if remains are sent back */
                 Arguments.of("May you ${{what:[A-Za-z]+ [A-Za-z]+ [A-Za-z]+}} days of your life",
@@ -124,19 +124,43 @@ class StringExtractorTest {
                              "com.org.app.executor.containers.api.instance.99db78be-08de-4e92-a93a-ca2dfac09bc2"
                                      + ".cpu_absolute_per_ms",
                              "com.org.app.executor.containers.api.instance.cpu_absolute_per_ms",
-                             ImmutableMap.of("component", "99db78be-08de-4e92-a93a-ca2dfac09bc2."))
+                             ImmutableMap.of("component", "99db78be-08de-4e92-a93a-ca2dfac09bc2.")),
+
+                /* test last variable */
+                Arguments.of("This is ${{name:[A-Za-z]+}}",
+                             "This is America",
+                             "This is ",
+                             ImmutableMap.of("name", "America")),
+
+                /* test last variable when multiple variables */
+                Arguments.of("This is ${{name:[A-Za-z]+}}. Guns in my ${{place:}}",
+                             "This is America. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("name", "America", "place", "area")),
+
+                /* test last variable (without a delimiter :) */
+                Arguments.of("This is ${{name:[A-Za-z]+}}. Guns in my ${{place}}",
+                             "This is America. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("name", "America", "place", "area")),
+
+                /* test discarded variable */
+                Arguments.of("This is ${{:[A-Za-z]+}}. Guns in my ${{place}}",
+                             "This is America. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("place", "area"))
 
                         );
     }
 
     public static Stream<Arguments> exceptionScenarioBlueprints() {
         return Stream.of(
-                Arguments.of("This is ${{:[A-Za-z]+}}", BlueprintParseErrorCode.EMPTY_VARIABLE_NAME),
                 Arguments.of("This is ${{}}. You are ${{adjective:[A-Za-z]+}}",
                              BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX),
+                Arguments.of("This is ${{:}}. You are ${{adjective:[A-Za-z]+}}",
+                             BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX),
                 Arguments.of("This is ${{name::[A-Z]+}}", BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION),
-                Arguments.of("This is ${{name:[A-Z]}}, you are ${{name2}}", BlueprintParseErrorCode.EMPTY_REGEX),
-                Arguments.of("This is ${{name:[A-Z]}}, you are ${{name2:}}", BlueprintParseErrorCode.EMPTY_REGEX),
+                Arguments.of("This is ${{name:}} more text", BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE),
                 Arguments.of("This is ${{name:[A-Z}}, you are ${{name2:[a]}}", BlueprintParseErrorCode.PATTERN_SYNTAX)
                         );
     }

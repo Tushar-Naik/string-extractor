@@ -14,11 +14,20 @@
 
 package io.github.tushar.naik.stringextractor;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
-@Getter
-@AllArgsConstructor
-abstract class Variable {
-    abstract <T> T accept(VariableVisitor<T> visitor);
+import java.util.regex.Pattern;
+
+@Value
+@EqualsAndHashCode(callSuper = true)
+class RegexMatchVariable extends Variable {
+    String variableName;
+    String regex;
+    Pattern pattern;
+
+    @Override
+    <T> T accept(final VariableVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

@@ -17,11 +17,10 @@ package io.github.tushar.naik.stringextractor;
 import lombok.Getter;
 
 public enum BlueprintParseErrorCode {
-    EMPTY_VARIABLE_REGEX("empty variable in blueprint, like - ${}"),
-    EMPTY_VARIABLE_NAME("variable name missing in blueprint, like - ${:[a-z]}"),
-    EMPTY_REGEX("regex missing in blueprint, like - ${name:}"),
-    INCORRECT_VARIABLE_REPRESENTATION("Incorrect variable representation:  not expressed as ${variable:regex}"),
+    EMPTY_VARIABLE_REGEX("empty variable in blueprint, like - ${{}}"),
+    INCORRECT_VARIABLE_REPRESENTATION("Incorrect variable representation:  not expressed as ${{variable:regex}}, too many :"),
     PATTERN_SYNTAX("Invalid Regex Pattern"),
+    TEXT_AFTER_LAST_VARIABLE("Last variable cannot be succeeded with more text. \"${{last:}} more\" is not allowed"),
     VARIABLE_NOT_CLOSED("Variable in blueprint is unclosed, like - ${{some");
 
     @Getter

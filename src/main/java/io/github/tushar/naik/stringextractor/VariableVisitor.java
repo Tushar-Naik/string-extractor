@@ -14,11 +14,10 @@
 
 package io.github.tushar.naik.stringextractor;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public interface VariableVisitor<T> {
+    T visit(RegexMatchVariable regexMatchVariable);
 
-@Getter
-@AllArgsConstructor
-abstract class Variable {
-    abstract <T> T accept(VariableVisitor<T> visitor);
+    T visit(DiscardedVariable discardedVariable);
+
+    T visit(LastVariable lastVariable);
 }
