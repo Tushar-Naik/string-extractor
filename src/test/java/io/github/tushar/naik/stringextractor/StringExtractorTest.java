@@ -144,6 +144,18 @@ class StringExtractorTest {
                              "This is . Guns in my ",
                              ImmutableMap.of("name", "America", "place", "area")),
 
+                /* test discarded exact match variable */
+                Arguments.of("This is ${{:America}}. Guns in my ${{place}}",
+                             "This is America. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("place", "area")),
+
+                /* test exact match variable */
+                Arguments.of("This is ${{name:America}}. Guns in my ${{place}}",
+                             "This is America. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("name", "America","place", "area")),
+
                 /* test discarded variable */
                 Arguments.of("This is ${{:[A-Za-z]+}}. Guns in my ${{place}}",
                              "This is America. Guns in my area",
@@ -160,9 +172,7 @@ class StringExtractorTest {
                 Arguments.of("This is ${{:}}. You are ${{adjective:[A-Za-z]+}}",
                              BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX),
                 Arguments.of("This is ${{name::[A-Z]+}}", BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION),
-                Arguments.of("This is ${{name:}} more text", BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE),
-                Arguments.of("This is ${{name:[A-Z}}, you are ${{name2:[a]}}", BlueprintParseErrorCode.PATTERN_SYNTAX)
-                        );
+                Arguments.of("This is ${{name:}} more text", BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE));
     }
 
     public static Stream<Arguments> noMatchBlueprints() {

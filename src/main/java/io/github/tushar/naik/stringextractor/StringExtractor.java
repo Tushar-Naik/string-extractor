@@ -22,7 +22,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * The class that houses the core logic for extraction
+ *
+ * @author tushar.naik
+ * @since 1.0.0
+ */
 public class StringExtractor {
+
     private final String remains;
     private final boolean failOnStringRemainingAfterExtraction;
     private final List<ParsedComponent> parsedComponents;
@@ -33,13 +40,23 @@ public class StringExtractor {
         }
 
         @Override
-        public Boolean visit(final DiscardedVariable discardedVariable) {
+        public Boolean visit(final DiscardedRegexMatchVariable discardedRegexMatchVariable) {
             return false;
         }
 
         @Override
         public Boolean visit(final LastVariable lastVariable) {
             return true;
+        }
+
+        @Override
+        public Boolean visit(final ExactMatchVariable exactMatchVariable) {
+            return false;
+        }
+
+        @Override
+        public Boolean visit(final DiscardedExactMatchVariable discardedExactMatchVariable) {
+            return false;
         }
     };
     private static final ParsedComponentVisitor<Boolean> IS_VARIABLE = new ParsedComponentVisitor<Boolean>() {
@@ -63,6 +80,16 @@ public class StringExtractor {
         this(blueprint, '$', '{', ':', '}', failOnStringRemainingAfterExtraction);
     }
 
+    /**
+     * @param blueprint                            the string that essentially represents the variable extraction rules
+     *                                             "io.${{domain:[a-zA-Z]+}}.${{user:[a-zA-Z]+}}.package"
+     * @param variableStart                        character representing the start of a variable
+     * @param variablePrefix                       character representing the prefix after start
+     * @param regexSeparator                       character that separates the variable from the regex
+     * @param variableSuffix                       character that
+     * @param failOnStringRemainingAfterExtraction set this to true if
+     * @throws BlueprintParseError any error while parsing the blueprint
+     */
     public StringExtractor(final String blueprint,
                            final char variableStart,
                            final char variablePrefix,
@@ -157,8 +184,12 @@ public class StringExtractor {
             throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
         }
         if (Utils.isNullOrEmpty(variableRegexSplits[0]) && !Utils.isNullOrEmpty(variableRegexSplits[1])) {
-            final Pattern compile = Pattern.compile(variableRegexSplits[1]);
-            return new DiscardedVariable(variableRegexSplits[1], compile);
+            try {
+                final Pattern compile = Pattern.compile(variableRegexSplits[1]);
+                return new DiscardedRegexMatchVariable(variableRegexSplits[1], compile);
+            } catch (PatternSyntaxException e) {
+                return new DiscardedExactMatchVariable(variableRegexSplits[1]);
+            }
         }
         if (variableRegexSplits.length == 1) {
             return new LastVariable(variableRegexSplits[0]);
@@ -168,7 +199,7 @@ public class StringExtractor {
             final Pattern compile = Pattern.compile(variableRegexSplits[1]);
             return new RegexMatchVariable(variableRegexSplits[0], variableRegexSplits[1], compile);
         } catch (PatternSyntaxException exception) {
-            throw new BlueprintParseError(BlueprintParseErrorCode.PATTERN_SYNTAX, exception);
+            return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
         }
     }
 
@@ -226,8 +257,17 @@ public class StringExtractor {
                     }
 
                     @Override
-                    public String visit(final DiscardedVariable discardedVariable) {
-                        final Pattern pattern = discardedVariable.getPattern();
+                    public String visit(final ExactMatchVariable exactMatchVariable) {
+                        if (finalDrain.startsWith(exactMatchVariable.getMatchString())) {
+                            extractions.put(exactMatchVariable.getVariableName(), exactMatchVariable.getMatchString());
+                            return finalDrain.substring(exactMatchVariable.getMatchString().length());
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public String visit(final DiscardedRegexMatchVariable discardedRegexMatchVariable) {
+                        final Pattern pattern = discardedRegexMatchVariable.getPattern();
                         final Matcher matcher = pattern.matcher(finalDrain);
                         if (matcher.find()) {
                             return matcher.replaceFirst("");
@@ -240,6 +280,14 @@ public class StringExtractor {
                         if (!Utils.isNullOrEmpty(finalDrain)) {
                             extractions.put(lastVariable.getVariableName(), finalDrain);
                             return "";
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public String visit(final DiscardedExactMatchVariable discardedExactMatchVariable) {
+                        if (finalDrain.startsWith(discardedExactMatchVariable.getMatchString())) {
+                            return finalDrain.substring(discardedExactMatchVariable.getMatchString().length());
                         }
                         return null;
                     }

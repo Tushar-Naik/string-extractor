@@ -14,14 +14,18 @@
 
 package io.github.tushar.naik.stringextractor;
 
-public interface VariableVisitor<T> {
-    T visit(RegexMatchVariable regexMatchVariable);
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
-    T visit(DiscardedRegexMatchVariable discardedRegexMatchVariable);
+import java.util.regex.Pattern;
 
-    T visit(LastVariable lastVariable);
+@Value
+@EqualsAndHashCode(callSuper = true)
+class DiscardedExactMatchVariable extends Variable {
+    String matchString;
 
-    T visit(ExactMatchVariable exactMatchVariable);
-
-    T visit(DiscardedExactMatchVariable discardedExactMatchVariable);
+    @Override
+    <T> T accept(final VariableVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }
