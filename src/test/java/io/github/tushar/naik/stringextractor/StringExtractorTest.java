@@ -150,9 +150,21 @@ class StringExtractorTest {
                              "This is . Guns in my ",
                              ImmutableMap.of("place", "area")),
 
+                /* test discarded exact match variable (with special characters) */
+                Arguments.of("This is ${{:Amer[ica}}. Guns in my ${{place}}",
+                             "This is Amer[ica. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("place", "area")),
+
                 /* test exact match variable */
                 Arguments.of("This is ${{name:America}}. Guns in my ${{place}}",
                              "This is America. Guns in my area",
+                             "This is . Guns in my ",
+                             ImmutableMap.of("name", "America","place", "area")),
+
+                /* test exact match variable with special characters */
+                Arguments.of("This is ${{name:Amer[ica}}. Guns in my ${{place}}",
+                             "This is Amer[ica. Guns in my area",
                              "This is . Guns in my ",
                              ImmutableMap.of("name", "America","place", "area")),
 
@@ -172,7 +184,8 @@ class StringExtractorTest {
                 Arguments.of("This is ${{:}}. You are ${{adjective:[A-Za-z]+}}",
                              BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX),
                 Arguments.of("This is ${{name::[A-Z]+}}", BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION),
-                Arguments.of("This is ${{name:}} more text", BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE));
+                Arguments.of("This is ${{name:}} more text", BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE),
+                Arguments.of("This is ${{name: more text", BlueprintParseErrorCode.VARIABLE_NOT_CLOSED));
     }
 
     public static Stream<Arguments> noMatchBlueprints() {

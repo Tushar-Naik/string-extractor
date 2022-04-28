@@ -29,6 +29,7 @@ import java.util.regex.PatternSyntaxException;
  * @since 1.0.0
  */
 public class StringExtractor {
+    private static final Pattern STR_WITH_SPECIAL_CHARACTERS = Pattern.compile("[^a-zA-Z\\d]");
 
     private final String remains;
     private final boolean failOnStringRemainingAfterExtraction;
@@ -173,6 +174,8 @@ public class StringExtractor {
 
     private Variable extractVariable(final char regexSeparator, final String variableNameRegex)
             throws BlueprintParseError {
+
+        /* validations */
         if (Utils.isNullOrEmpty(variableNameRegex)) {
             throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
         }
@@ -183,7 +186,17 @@ public class StringExtractor {
         if (variableRegexSplits.length == 0) { // handles ${{:}}
             throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
         }
-        if (Utils.isNullOrEmpty(variableRegexSplits[0]) && !Utils.isNullOrEmpty(variableRegexSplits[1])) {
+
+
+        if (variableRegexSplits.length == 1) {
+            return new LastVariable(variableRegexSplits[0]);
+        }
+
+        if (Utils.isNullOrEmpty(variableRegexSplits[0])
+                && !Utils.isNullOrEmpty(variableRegexSplits[1])) {
+            if (!STR_WITH_SPECIAL_CHARACTERS.matcher(variableRegexSplits[1]).find()) {
+                return new DiscardedExactMatchVariable(variableRegexSplits[1]);
+            }
             try {
                 final Pattern compile = Pattern.compile(variableRegexSplits[1]);
                 return new DiscardedRegexMatchVariable(variableRegexSplits[1], compile);
@@ -191,11 +204,11 @@ public class StringExtractor {
                 return new DiscardedExactMatchVariable(variableRegexSplits[1]);
             }
         }
-        if (variableRegexSplits.length == 1) {
-            return new LastVariable(variableRegexSplits[0]);
-        }
 
         try {
+            if (!STR_WITH_SPECIAL_CHARACTERS.matcher(variableRegexSplits[1]).find()) {
+                return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
+            }
             final Pattern compile = Pattern.compile(variableRegexSplits[1]);
             return new RegexMatchVariable(variableRegexSplits[0], variableRegexSplits[1], compile);
         } catch (PatternSyntaxException exception) {
