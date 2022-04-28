@@ -166,7 +166,7 @@ class StringExtractorTest {
                 Arguments.of("This is ${{name:Amer[ica}}. Guns in my ${{place}}",
                              "This is Amer[ica. Guns in my area",
                              "This is . Guns in my ",
-                             ImmutableMap.of("name", "America","place", "area")),
+                             ImmutableMap.of("name", "Amer[ica","place", "area")),
 
                 /* test discarded variable */
                 Arguments.of("This is ${{:[A-Za-z]+}}. Guns in my ${{place}}",
