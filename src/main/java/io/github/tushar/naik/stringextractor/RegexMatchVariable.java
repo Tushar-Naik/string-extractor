@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 @EqualsAndHashCode(callSuper = true)
 class RegexMatchVariable extends Variable {
     String variableName;
-    String regex;
     Pattern pattern;
 
     @Override

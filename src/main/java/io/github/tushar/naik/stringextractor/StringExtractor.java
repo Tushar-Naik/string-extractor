@@ -133,7 +133,7 @@ public class StringExtractor {
                 variableIsBeingExtracted = false;
                 Utils.clearStringBuilder(variableName);
                 index += 2;
-                if (variable.accept(IS_LAST_VARIABLE)) {
+                if (Boolean.TRUE.equals(variable.accept(IS_LAST_VARIABLE))) {
                     lastVariableInvolved = true;
                 }
             } else if (variableIsBeingExtracted) {
@@ -199,7 +199,7 @@ public class StringExtractor {
             }
             try {
                 final Pattern compile = Pattern.compile(variableRegexSplits[1]);
-                return new DiscardedRegexMatchVariable(variableRegexSplits[1], compile);
+                return new DiscardedRegexMatchVariable(compile);
             } catch (PatternSyntaxException e) {
                 return new DiscardedExactMatchVariable(variableRegexSplits[1]);
             }
@@ -210,7 +210,7 @@ public class StringExtractor {
                 return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
             }
             final Pattern compile = Pattern.compile(variableRegexSplits[1]);
-            return new RegexMatchVariable(variableRegexSplits[0], variableRegexSplits[1], compile);
+            return new RegexMatchVariable(variableRegexSplits[0], compile);
         } catch (PatternSyntaxException exception) {
             return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
         }

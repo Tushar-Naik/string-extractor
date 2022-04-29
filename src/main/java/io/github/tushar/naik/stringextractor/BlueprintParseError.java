@@ -24,9 +24,4 @@ public class BlueprintParseError extends Exception {
         super(blueprintParseErrorCode.getErrorMessage());
         this.blueprintParseErrorCode = blueprintParseErrorCode;
     }
-
-    public BlueprintParseError(final BlueprintParseErrorCode blueprintParseErrorCode, Throwable t) {
-        super(blueprintParseErrorCode.getErrorMessage(), t);
-        this.blueprintParseErrorCode = blueprintParseErrorCode;
-    }
 }

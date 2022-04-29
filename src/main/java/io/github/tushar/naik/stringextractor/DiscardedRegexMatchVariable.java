@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 @Value
 @EqualsAndHashCode(callSuper = true)
 class DiscardedRegexMatchVariable extends Variable {
-    String regex;
     Pattern pattern;
 
     @Override

@@ -17,8 +17,6 @@ package io.github.tushar.naik.stringextractor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-import java.util.regex.Pattern;
-
 @Value
 @EqualsAndHashCode(callSuper = true)
 class DiscardedExactMatchVariable extends Variable {
