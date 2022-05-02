@@ -28,12 +28,13 @@ import java.util.regex.PatternSyntaxException;
  * @author tushar.naik
  * @since 1.0.0
  */
-public class StringExtractor {
+public class StringExtractor implements Extractor {
     private static final Pattern STR_WITH_SPECIAL_CHARACTERS = Pattern.compile("[^a-zA-Z\\d]");
 
     private final String remains;
     private final boolean failOnStringRemainingAfterExtraction;
     private final List<ParsedComponent> parsedComponents;
+    private final int numOfVariables;
     private static final VariableVisitor<Boolean> IS_LAST_VARIABLE = new VariableVisitor<Boolean>() {
         @Override
         public Boolean visit(final RegexMatchVariable regexMatchVariable) {
@@ -155,6 +156,36 @@ public class StringExtractor {
             throw new BlueprintParseError(BlueprintParseErrorCode.VARIABLE_NOT_CLOSED);
         }
         remains = remainsBuilder.toString();
+        numOfVariables = (int) parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
+    }
+
+    /**
+     * perform extractions from a source string using the compiled blueprint
+     *
+     * @param source source string
+     * @return result after extraction
+     */
+    @Override
+    public ExtractionResult extractFrom(final String source) {
+        final Map<String, Object> extractions = new HashMap<>(numOfVariables);
+        String drain = source;
+
+        for (final ParsedComponent parsedComponent : parsedComponents) {
+            final String finalDrain = drain;
+            drain = parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
+            if (drain == null) {
+                return ExtractionResult.error();
+            }
+        }
+
+        if (failOnStringRemainingAfterExtraction && !Utils.isNullOrEmpty(drain)) {
+            return ExtractionResult.error();
+        }
+
+        return ExtractionResult.builder()
+                .extractedString(remains + drain)
+                .extractions(extractions)
+                .build();
     }
 
     private boolean isVariableEnd(final char variableSuffix, final char[] chars, final int index) {
@@ -216,28 +247,6 @@ public class StringExtractor {
         }
     }
 
-    public ExtractionResult extractFrom(final String source) {
-        final Map<String, Object> extractions = new HashMap<>();
-        String drain = source;
-
-        for (final ParsedComponent parsedComponent : parsedComponents) {
-            final String finalDrain = drain;
-            drain = parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
-            if (drain == null) {
-                return ExtractionResult.error();
-            }
-        }
-
-        if (failOnStringRemainingAfterExtraction && !Utils.isNullOrEmpty(drain)) {
-            return ExtractionResult.error();
-        }
-
-        return ExtractionResult.builder()
-                .extractedString(remains + drain)
-                .extractions(extractions)
-                .build();
-    }
-
     private ParsedComponentVisitor<String> generateDrainFromComponent(final Map<String, Object> extractions,
                                                                       final String finalDrain) {
         return new ParsedComponentVisitor<String>() {
@@ -264,7 +273,7 @@ public class StringExtractor {
                         if (matcher.find()) {
                             final String firstMatch = matcher.group(0);
                             extractions.put(regexMatchVariable.getVariableName(), firstMatch);
-                            return matcher.replaceFirst("");
+                            return finalDrain.substring(firstMatch.length());
                         }
                         return null;
                     }
@@ -283,7 +292,8 @@ public class StringExtractor {
                         final Pattern pattern = discardedRegexMatchVariable.getPattern();
                         final Matcher matcher = pattern.matcher(finalDrain);
                         if (matcher.find()) {
-                            return matcher.replaceFirst("");
+                            final String firstMatch = matcher.group(0);
+                            return finalDrain.substring(firstMatch.length());
                         }
                         return null;
                     }
@@ -310,6 +320,6 @@ public class StringExtractor {
     }
 
     public long numberOfVariables() {
-        return parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
+        return numOfVariables;
     }
 }

@@ -41,7 +41,7 @@ class StringExtractorTest {
         final StringExtractor stringExtractor = new StringExtractor(blueprint);
         final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
         assertEquals(result, extractionResult.getExtractedString());
-        assertMapEquals(extractedMap, extractionResult.getExtractions());
+        TestUtils.assertMapEquals(extractedMap, extractionResult.getExtractions());
         assertFalse(extractionResult.isError());
     }
 
@@ -194,21 +194,5 @@ class StringExtractorTest {
                 Arguments.of("${{blue:[A-Za-z]+}}", "This is "),
                 Arguments.of("Some BS ${{blue:[A-Za-z]+}}", "This is who")
                         );
-    }
-
-    private static void assertMapEquals(final Map<String, Object> expected,
-                                        final Map<String, Object> actual) {
-        if (!areEqual(expected, actual)) {
-            fail("Expected: " + expected + " actual:" + actual);
-        }
-    }
-
-    private static boolean areEqual(final Map<String, Object> first,
-                                    final Map<String, Object> second) {
-        if (first.size() != second.size()) {
-            return false;
-        }
-        return first.entrySet().stream()
-                .allMatch(e -> e.getValue().equals(second.get(e.getKey())));
     }
 }

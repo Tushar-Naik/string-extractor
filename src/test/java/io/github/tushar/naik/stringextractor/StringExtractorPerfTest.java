@@ -36,7 +36,7 @@ class StringExtractorPerfTest {
         final StringExtractor stringExtractor = new StringExtractor(blueprint);
         float evaluationTime = performanceEvaluator
                 .evaluateTime(numberOfEvaluations, () -> stringExtractor.extractFrom(source));
-        System.out.printf("%s evaluations for blueprint with %d variables took %fms", numberOfEvaluations,
+        System.out.printf("%s evaluations for blueprint with %d variables took %fms\n", numberOfEvaluations,
                           stringExtractor.numberOfVariables(),
                           evaluationTime);
         Assertions.assertTrue(evaluationTime < maxEvalTimeExpected);

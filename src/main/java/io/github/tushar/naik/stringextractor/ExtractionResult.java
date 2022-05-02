@@ -23,11 +23,13 @@ import java.util.Map;
 @Value
 @Builder
 public class ExtractionResult {
+    private static final ExtractionResult ERROR_RESULT = ExtractionResult.builder().error(true).build();
+
     String extractedString;
     Map<String, Object> extractions;
     boolean error;
 
     public static ExtractionResult error() {
-        return ExtractionResult.builder().error(true).build();
+        return ERROR_RESULT;
     }
 }
