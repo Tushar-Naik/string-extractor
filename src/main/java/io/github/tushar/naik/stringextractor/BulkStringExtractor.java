@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 /**
  * This class may be used for extracting from multiple blueprints.
- * @implNote : the first blueprint that matches with a successful extraction, will be returned as a result
+ * Note: The first blueprint that matches with a successful extraction, will be returned as a result
  *
  * @author tushar.naik
  * @since 1.0.0
