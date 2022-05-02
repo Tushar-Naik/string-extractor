@@ -37,7 +37,6 @@ public class BulkStringExtractor implements Extractor {
         stringExtractors = new ArrayList<>();
         for (final String blueprint : blueprints) {
             stringExtractors.add(new StringExtractor(blueprint));
-
         }
     }
 
