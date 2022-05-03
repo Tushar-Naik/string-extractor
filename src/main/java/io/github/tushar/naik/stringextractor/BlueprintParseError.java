@@ -16,6 +16,9 @@ package io.github.tushar.naik.stringextractor;
 
 import lombok.Getter;
 
+/**
+ * An error class that wraps all blueprint parsing related exceptions
+ */
 public class BlueprintParseError extends Exception {
     @Getter
     private final BlueprintParseErrorCode blueprintParseErrorCode;

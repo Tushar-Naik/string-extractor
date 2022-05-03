@@ -34,7 +34,11 @@ public class StringExtractor implements Extractor {
     private final String remains;
     private final boolean failOnStringRemainingAfterExtraction;
     private final List<ParsedComponent> parsedComponents;
-    private final int numOfVariables;
+    private final int numberOfVariables;
+
+    /**
+     * a visitor on the variable types, which returns true if it was of type {@link LastVariable}
+     */
     private static final VariableVisitor<Boolean> IS_LAST_VARIABLE = new VariableVisitor<Boolean>() {
         @Override
         public Boolean visit(final RegexMatchVariable regexMatchVariable) {
@@ -61,6 +65,10 @@ public class StringExtractor implements Extractor {
             return false;
         }
     };
+
+    /**
+     * A visitor on the component, that returns true if applied on a {@link VariableComponent} typed object
+     */
     private static final ParsedComponentVisitor<Boolean> IS_VARIABLE = new ParsedComponentVisitor<Boolean>() {
         @Override
         public Boolean visit(final ExactMatchComponent exactMatchComponent) {
@@ -88,8 +96,9 @@ public class StringExtractor implements Extractor {
      * @param variableStart                        character representing the start of a variable
      * @param variablePrefix                       character representing the prefix after start
      * @param regexSeparator                       character that separates the variable from the regex
-     * @param variableSuffix                       character that
-     * @param failOnStringRemainingAfterExtraction set this to true if
+     * @param variableSuffix                       character that represents the suffix
+     * @param failOnStringRemainingAfterExtraction set this to true if you want to ignore if there are dangling
+     *                                             characters after the last variable
      * @throws BlueprintParseError any error while parsing the blueprint
      */
     public StringExtractor(final String blueprint,
@@ -101,7 +110,7 @@ public class StringExtractor implements Extractor {
         this.failOnStringRemainingAfterExtraction = failOnStringRemainingAfterExtraction;
         this.parsedComponents = new ArrayList<>();
 
-        /* Just to be clear, I'm not proud of what the code below, need to move it to a proper language parser */
+        /* Just to be clear, I'm not proud of what the code below, need to move it to a proper LL(1) language parser */
 
         final char[] chars = blueprint.toCharArray();
         final StringBuilder collected = new StringBuilder();
@@ -156,7 +165,7 @@ public class StringExtractor implements Extractor {
             throw new BlueprintParseError(BlueprintParseErrorCode.VARIABLE_NOT_CLOSED);
         }
         remains = remainsBuilder.toString();
-        numOfVariables = (int) parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
+        numberOfVariables = (int) parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
     }
 
     /**
@@ -167,7 +176,7 @@ public class StringExtractor implements Extractor {
      */
     @Override
     public ExtractionResult extractFrom(final String source) {
-        final Map<String, Object> extractions = new HashMap<>(numOfVariables);
+        final Map<String, Object> extractions = new HashMap<>(numberOfVariables);
         String drain = source;
 
         for (final ParsedComponent parsedComponent : parsedComponents) {
@@ -320,6 +329,6 @@ public class StringExtractor implements Extractor {
     }
 
     public long numberOfVariables() {
-        return numOfVariables;
+        return numberOfVariables;
     }
 }

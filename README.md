@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/tushar-naik/string-extractor)](https://github.com/tushar-naik/string-extractor/blob/master/LICENSE)
 ![Coverage](.github/badges/jacoco.svg)
 ![Coverage](.github/badges/branches.svg)
-i
+
 A simple utility that can be used to extract values from a string using a compiled blueprint
 
 ### Why?
@@ -34,11 +34,11 @@ The following example should give you an idea of what an extraction is:<br>
 - Proper error handling
 - Allows multiple extractions
 - Supports different types of extractions
-    1. Exact match              : `org.${{domain:apache}}.org.dc.node3`
-    2. Regex Match              : `org.${{domain:[a-z]+}}.org.dc.node3`
+    1. Exact match Variable     : `org.${{domain:apache}}.org.dc.node3`
+    2. Regex Match Variable     : `org.${{domain:[a-z]+}}.org.dc.node3`
     3. Last Variable            : `org.${{domain}}`  
-    4. Discarded Variable       : `org.${{:[a-z]+}}.org.dc.node3`
-    5. Discarded Exact Variable : `org.${{:apache}}.org.dc.node3`
+    4. Discarded Regex Variable : `org.${{:[a-z]+}}.org.dc.node3`
+    5. Discarded Exact Match    : `org.${{:apache}}.org.dc.node3`
 
 #### Things to remember:
 1. There is a cost associated with regex matching. The more regex variables are matched and extracted, the slower it will be. 
@@ -51,13 +51,13 @@ Use the following dependency in your code.
 <dependency>
     <groupId>io.github.tushar-naik</groupId>
     <artifactId>string-extractor</artifactId>
-    <version>1.0.0</version>
+    <version>${extractor.version}</version> <!--look for the latest version on top-->
 </dependency>
 ```
 
 ### Usage
 
-The following shows a simple usecase where you want to extract from a single blueprint
+The following shows a simple use-case where you want to extract from a single blueprint
 ```java
 final String blueprint = "My name is ${{name:[A-Za-z]+}}";
 final StringExtractor stringExtractor = new StringExtractor(blueprint); 
@@ -69,7 +69,7 @@ final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
 
 ```
 
-The following shows a more complicated usecase where you want to extract from several blueprints. Note that the first match that happens, will be the exrtaction result
+The following shows a more complicated use-case where you want to extract from several blueprints. Note that the first match that happens, will be the exrtaction result
 ```java
 extractor = new BulkStringExtractor(
         ImmutableList.of(

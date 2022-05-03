@@ -20,6 +20,7 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = true)
 class DiscardedExactMatchVariable extends Variable {
+
     String matchString;
 
     @Override

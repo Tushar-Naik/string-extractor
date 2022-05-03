@@ -6,7 +6,7 @@
 
     <groupId>io.github.tushar-naik</groupId>
     <artifactId>string-extractor</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>string-extractor</name>
     <description>A utility that can be used to extract values from a string</description>

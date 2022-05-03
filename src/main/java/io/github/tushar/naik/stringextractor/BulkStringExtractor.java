@@ -40,6 +40,14 @@ public class BulkStringExtractor implements Extractor {
         }
     }
 
+    /**
+     * Given the precompiled set of blueprints(as part of the constructor),
+     * try to extract from source string.
+     *
+     * @param source string used as source
+     * @return ExtractionResult if any of the blueprint extractions were successful, else
+     * {@link ExtractionResult#error()} if none match
+     */
     @Override
     public ExtractionResult extractFrom(final String source) {
         for (final StringExtractor stringExtractor : stringExtractors) {
@@ -48,6 +56,6 @@ public class BulkStringExtractor implements Extractor {
                 return extractionResult;
             }
         }
-        return ExtractionResult.builder().error(true).build();
+        return ExtractionResult.error();
     }
 }
