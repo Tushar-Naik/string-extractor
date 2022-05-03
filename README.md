@@ -8,11 +8,28 @@
 
 A simple utility that can be used to extract values from a string using a compiled blueprint
 
-### Why?
+### Syntax for extraction blueprints aka rules
+From here on, we will refer to all rules for extractions as blueprints<br>
+Before we start, it is important to understand the schema of a blueprint string:<br>
+A simple blueprint would look like so:<br>
+
+**someString`${{variableName1:matchString1}}`someMoreString`${{variableName2:matchString2}}`**
+
+here: 
+1. `variableName` is **optional** (if not present, then that matched string will be discarded) eg: `${{:matchString}}`
+   1. If `variableName` is present, the matched string will be put into the variable and returned as part of the result, and removed from the source string. 
+   2. If absent, the matched string will still be removed from the source string 
+2. `matchString` could be one of 2 things:
+   1. **String**: which expects an exact match. eg: `${{variable1:value1}}`
+   2. **Regex**: which expects a regex match. eg: `${{variable1:[a-zA-Z]+}}`
+3. `${{` and `}}` are markers for start and end of a variable definition
+
+
+### So what is an extraction?
 The following example should give you an idea of what an extraction is:<br>
 **Blueprint:** `io.${{domain:[a-zA-Z]+}}.${{user:[a-zA-Z]+}}.package}` <br>
 **Input String:** `io.github.tushar.package` <br>
-**Output:** The ExtractionResult would look like so (This is just a json representation of the `ExtractionResult` object): <br>
+**Output:** The ExtractionResult would look like so (This is just a json representation of the `ExtractionResult` java object): <br>
 ```json
 {
   "extractedString": "io..package ",
@@ -26,7 +43,7 @@ The following example should give you an idea of what an extraction is:<br>
 
 #### Why would this be required?
 - This is essentially a naive implementation for the reverse of a [Handlebars.java](https://github.com/jknack/handlebars.java)
-- Transformation of jmx metrics
+- Could be used for transformation of jmx metrics
   - `org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3` into <br> `name=org.apache.kafka.common.metrics.kafka-sink_` and `host=prd-001.org.dc.node3` 
      
 
