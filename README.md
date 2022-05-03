@@ -1,11 +1,11 @@
 # String Extractor 
 
 [![Java CI with Maven](https://github.com/tushar-naik/string-extractor/actions/workflows/actions.yml/badge.svg)](https://github.com/tushar-naik/string-extractor/actions/workflows/actions.yml)
-![Release](https://img.shields.io/maven-central/v/io.github.tushar-naik/string-extractor)
-[![License](https://img.shields.io/github/license/tushar-naik/string-extractor)](https://github.com/tushar-naik/string-extractor/blob/main/LICENSE)
+[![Release](https://img.shields.io/maven-central/v/io.github.tushar-naik/string-extractor)](https://s01.oss.sonatype.org/content/repositories/releases/io/github/tushar-naik/string-extractor/)
+[![License](https://img.shields.io/github/license/tushar-naik/string-extractor)](https://github.com/tushar-naik/string-extractor/blob/master/LICENSE)
 ![Coverage](.github/badges/jacoco.svg)
 ![Coverage](.github/badges/branches.svg)
-
+i
 A simple utility that can be used to extract values from a string using a compiled blueprint
 
 ### Why?
