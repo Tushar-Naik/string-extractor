@@ -55,7 +55,8 @@ where:
 
 ## Extraction
 
-The following example should give you an idea of what an extraction is:<br>
+The following example should give you an idea of what an extraction is (don't get confused seeing the output as a json,
+it is just a json representation of the ExtractionResult.java object you will get as result):<br>
 <table>
 <tr><td>Blueprint</td>
 <td>
@@ -73,18 +74,19 @@ The following example should give you an idea of what an extraction is:<br>
 {
   "extractedString": "You are .",
   "extractions": {
-    "adjective": "beautiful",
+    "adjective": "beautiful"
   },
   "error": false
 }
   ```
+
 </table>
 Here is another example: 
 <table>
 <tr><td>Blueprint</td>
 <td>
 
-`io.${{domain:[a-zA-Z]+}}${{:.}}${{user:[a-zA-Z]+}}.package}`
+`io.${{domain:[a-zA-Z]+}}${{:.}}${{user:[a-zA-Z]+}}.package`
 </td>
 </tr>
 <tr><td>Input String</td><td>
@@ -103,8 +105,8 @@ Here is another example:
   "error": false
 }
   ```
-</table>
 
+</table>
 
 ## Features
 
@@ -144,12 +146,12 @@ Use the following dependency in your code.
 The following shows a simple use-case where you want to extract from a single blueprint
 
 ```java
-final String blueprint = "My name is ${{name:[A-Za-z]+}}";
-final StringExtractor stringExtractor = new StringExtractor(blueprint);
+final String blueprint="My name is ${{name:[A-Za-z]+}}";
+final StringExtractor stringExtractor=new StringExtractor(blueprint);
 // do the above only once in your code, this is essentially a way of compiling the blueprint and the regexes involved
 
-final String source = "My name is Tushar"
-final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
+final String source="My name is Tushar"
+final ExtractionResult extractionResult=stringExtractor.extractFrom(source);
 // You can run the above on several source Strings
 
 ```
@@ -158,17 +160,17 @@ The following shows a more complicated use-case where you want to extract from s
 match that happens, will be the exrtaction result
 
 ```java
-extractor = ExtractorBuilder.newBuilder().blueprints(
+extractor=ExtractorBuilder.newBuilder().blueprints(
         ImmutableList.of(
         "io.github.${{name:[a-z]+\\.[a-z]+}}.stringextractor",
         "org.apache.kafka.common.metrics.consumer-node-metrics.consumer-1.${{node:node-[0-9]+}}.outgoing-byte-rate",
         "org.perf.service.reminders.${{component:[A-Za-z]+}}.consumed.m5_rate",
         "kafkawriter.org.apache.kafka.common.metrics.producer-topic-metrics.kafka-sink_${{host:(stg|prd)-[a-z0-9]+.org.[a-z0-9]+}}.offerengine_source.record-send-total",
         "${{service:[^.]+}}.memory.pools.Metaspace.init"));
-        
+
 // do the above only once in your code, this is essentially a way of compiling the blueprints and the regexes involved
-ExtractionResult extractionResult1 = extractor.extractFrom("io.github.tushar.naik.stringextractor");
-ExtractionResult extractionResult2 = extractor.extractFrom("org.perf.service.reminders.rabbitmq.consumed.m5_rate");
+        ExtractionResult extractionResult1=extractor.extractFrom("io.github.tushar.naik.stringextractor");
+        ExtractionResult extractionResult2=extractor.extractFrom("org.perf.service.reminders.rabbitmq.consumed.m5_rate");
 // You can run the above on several source Strings
 
 ```
