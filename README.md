@@ -8,8 +8,8 @@
     <a href="https://s01.oss.sonatype.org/content/repositories/releases/io/github/tushar-naik/string-extractor/">
     	<img src="https://img.shields.io/maven-central/v/io.github.tushar-naik/string-extractor"/>
     </a>
-    <a href="license">
-    	<img src="https://img.shields.io/github/license/tushar-naik/string-extractor" alt="license mit" />
+    <a href="https://github.com/Tushar-Naik/string-extractor/blob/master/LICENSE">
+    	<img src="https://img.shields.io/github/license/tushar-naik/string-extractor" alt="license" />
     </a>
     <a href=".github/badges/jacoco.svg">
     	<img src=".github/badges/branches.svg"/>
