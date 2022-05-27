@@ -20,7 +20,10 @@ public enum BlueprintParseErrorCode {
     EMPTY_VARIABLE_REGEX("empty variable in blueprint, like - ${{}}"),
     INCORRECT_VARIABLE_REPRESENTATION("Incorrect variable representation:  not expressed as ${{variable:regex}}, too many :"),
     TEXT_AFTER_LAST_VARIABLE("Last variable cannot be succeeded with more text. \"${{last:}} more\" is not allowed"),
-    VARIABLE_NOT_CLOSED("Variable in blueprint is unclosed, like - ${{some");
+    VARIABLE_NOT_CLOSED("Variable in blueprint is unclosed, like - ${{some"),
+    INCORRECT_BUILDER_USAGE("Builder was initialized without any blueprints"),
+    INVALID_CHARACTER_SETTINGS("Looks like the variablePrefix, variableSuffix, regexSeparator, variableStart are "
+                                       + "common. Each character is expected to be different");
 
     @Getter
     private final String errorMessage;

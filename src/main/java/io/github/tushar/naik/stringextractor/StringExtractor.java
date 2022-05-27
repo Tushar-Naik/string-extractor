@@ -107,6 +107,16 @@ public class StringExtractor implements Extractor {
                            final char regexSeparator,
                            final char variableSuffix,
                            final boolean failOnStringRemainingAfterExtraction) throws BlueprintParseError {
+
+        /* a base condition check */
+        checkCondition(variableStart == variablePrefix ||
+                               variableStart == regexSeparator ||
+                               variableStart == variableSuffix ||
+                               variablePrefix == regexSeparator ||
+                               variablePrefix == variableSuffix ||
+                               regexSeparator == variableSuffix,
+                       BlueprintParseErrorCode.INVALID_CHARACTER_SETTINGS);
+
         this.failOnStringRemainingAfterExtraction = failOnStringRemainingAfterExtraction;
         this.parsedComponents = new ArrayList<>();
 
@@ -121,10 +131,7 @@ public class StringExtractor implements Extractor {
         boolean lastVariableInvolved = false;
         int index = 0;
         while (index < chars.length) {
-            if (lastVariableInvolved) {
-                /* if there was a LastVariable without regex, then there should be no more collected string */
-                throw new BlueprintParseError(BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE);
-            }
+            checkCondition(lastVariableInvolved, BlueprintParseErrorCode.TEXT_AFTER_LAST_VARIABLE);
             if (isVariableStart(variableStart, variablePrefix, chars, index)) {
                 if (collected.length() != 0) {
                     final String collectedString = collected.toString();
@@ -161,9 +168,7 @@ public class StringExtractor implements Extractor {
             parsedComponents.add(new ExactMatchComponent(collectedString));
             remainsBuilder.append(collected);
         }
-        if (variableIsBeingExtracted) {
-            throw new BlueprintParseError(BlueprintParseErrorCode.VARIABLE_NOT_CLOSED);
-        }
+        checkCondition(variableIsBeingExtracted, BlueprintParseErrorCode.VARIABLE_NOT_CLOSED);
         remains = remainsBuilder.toString();
         numberOfVariables = (int) parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
     }
@@ -197,6 +202,10 @@ public class StringExtractor implements Extractor {
                 .build();
     }
 
+    public long numberOfVariables() {
+        return numberOfVariables;
+    }
+
     private boolean isVariableEnd(final char variableSuffix, final char[] chars, final int index) {
         return index + 1 < chars.length && chars[index] == variableSuffix
                 && chars[index + 1] == variableSuffix
@@ -216,16 +225,10 @@ public class StringExtractor implements Extractor {
             throws BlueprintParseError {
 
         /* validations */
-        if (Utils.isNullOrEmpty(variableNameRegex)) {
-            throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
-        }
+        checkCondition(Utils.isNullOrEmpty(variableNameRegex), BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
         final String[] variableRegexSplits = variableNameRegex.split(String.valueOf(regexSeparator));
-        if (variableRegexSplits.length > 2) { // handles ${{a:b:c}}
-            throw new BlueprintParseError(BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION);
-        }
-        if (variableRegexSplits.length == 0) { // handles ${{:}}
-            throw new BlueprintParseError(BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
-        }
+        checkCondition(variableRegexSplits.length > 2, BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION);
+        checkCondition(variableRegexSplits.length == 0, BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
 
 
         if (variableRegexSplits.length == 1) {
@@ -328,7 +331,11 @@ public class StringExtractor implements Extractor {
         };
     }
 
-    public long numberOfVariables() {
-        return numberOfVariables;
+
+    private void checkCondition(final boolean condition, final BlueprintParseErrorCode invalidCharacterSettings)
+            throws BlueprintParseError {
+        if (condition) {
+            throw new BlueprintParseError(invalidCharacterSettings);
+        }
     }
 }

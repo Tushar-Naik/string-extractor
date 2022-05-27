@@ -19,7 +19,7 @@ class BulkStringExtractorTest {
 
     @BeforeAll
     static void beforeAll() throws BlueprintParseError {
-        extractor = new BulkStringExtractor(
+        extractor = ExtractorBuilder.newBuilder().blueprints(
                 ImmutableList.of(
                         "io.github.${{name:[a-z]+\\.[a-z]+}}.stringextractor",
                         "org.apache.kafka.common.metrics.consumer-node-metrics.consumer-1.${{node:node-[0-9]+}}"
@@ -31,7 +31,7 @@ class BulkStringExtractorTest {
                         "${{processor:[^.]+}}.kafkasourcev2.org.apache.kafka.common.metrics"
                                 + ".consumer-fetch-manager-metrics.consumer-kratos-shadow-processor-1.${{topic:[^"
                                 + ".]+}}${{:.[0-9]+}}.records-lead-min"
-                                ));
+                                )).build();
     }
 
     @ParameterizedTest

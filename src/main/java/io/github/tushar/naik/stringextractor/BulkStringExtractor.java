@@ -33,10 +33,16 @@ import java.util.stream.Collectors;
 public class BulkStringExtractor implements Extractor {
     private final List<StringExtractor> stringExtractors;
 
-    public BulkStringExtractor(List<String> blueprints) throws BlueprintParseError {
+    public BulkStringExtractor(final List<String> blueprints,
+                               final char variableStart,
+                               final char variablePrefix,
+                               final char regexSeparator,
+                               final char variableSuffix,
+                               final boolean failOnStringRemainingAfterExtraction) throws BlueprintParseError {
         stringExtractors = new ArrayList<>();
         for (final String blueprint : blueprints) {
-            stringExtractors.add(new StringExtractor(blueprint));
+            stringExtractors.add(new StringExtractor(blueprint, variableStart, variablePrefix, regexSeparator,
+                                                     variableSuffix, failOnStringRemainingAfterExtraction));
         }
     }
 
