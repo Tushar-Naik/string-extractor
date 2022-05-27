@@ -53,7 +53,7 @@ where:
     2. **Regex**: which expects a regex match. eg: `${{variable1:[a-zA-Z]+}}`
 3. `${{` and `}}` are markers for start and end of a variable definition
 
-### So what is an extraction?
+## So what is an extraction?
 
 The following example should give you an idea of what an extraction is:<br>
 
