@@ -24,7 +24,7 @@
 
 - You might have run into situation, where you want to extract substrings from within a string, that match a regex
 - Sometimes, you might need a reverse of [Handlebars.java](https://github.com/jknack/handlebars.java)
-- Could be used for transformation of jmx metrics
+- You might be trying to transform some jmx metrics
     - `org.apache.kafka.network.prd-001.org.dc.node3`
       into <br> `name=org.apache.kafka.network` and `host=prd-001.org.dc.node3`
 
