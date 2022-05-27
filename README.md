@@ -53,12 +53,9 @@ where:
     2. **Regex**: which expects a regex match. eg: `${{variable1:[a-zA-Z]+}}`
 3. `${{` and `}}` are markers for start and end of a variable definition
 
-## So what is an extraction?
+## Extraction
 
 The following example should give you an idea of what an extraction is:<br>
-
-
-
 <table>
 <tr><td>Blueprint</td>
 <td>
@@ -70,8 +67,6 @@ The following example should give you an idea of what an extraction is:<br>
 
 `You are beautiful.`
 </td></tr>
-
-
 <tr><td>Output</td><td>
 
   ```json
@@ -84,27 +79,23 @@ The following example should give you an idea of what an extraction is:<br>
 }
   ```
 </table>
-
-
 Here is another example: 
 <table>
 <tr><td>Blueprint</td>
 <td>
 
-`io.${{domain:[a-zA-Z]+}}.${{user:[a-zA-Z]+}}.package}`
+`io.${{domain:[a-zA-Z]+}}${{:.}}${{user:[a-zA-Z]+}}.package}`
 </td>
 </tr>
 <tr><td>Input String</td><td>
 
 `io.github.tushar.package`
 </td></tr>
-
-
 <tr><td>Output</td><td>
 
   ```json
 {
-  "extractedString": "io..package ",
+  "extractedString": "io.package",
   "extractions": {
     "domain": "github",
     "user": "tushar"
