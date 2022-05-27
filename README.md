@@ -32,7 +32,7 @@ This library tries to address the above.
 You will need to specify a few extraction blueprints, and run your strings through them to extract values.
 Before you get started with the code, let us first understand blueprints.
 
-### Syntax for extraction blueprints aka rules
+### Syntax for blueprints aka rules
 
 From here on, we will refer to all rules for extractions as blueprints.<br>
 Before we start, it is important to understand the schema/language of a blueprint string:<br>
