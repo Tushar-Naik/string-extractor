@@ -1,5 +1,5 @@
 <p align="center">
-  <h2 align="center">String Extractor</h2>
+  <h1 align="center">String Extractor</h1>
   <p align="center">Utility to extract values from a string using a compiled Blueprint<p>
   <p align="center">
     <a href="https://github.com/Tushar-Naik/string-extractor/actions">
