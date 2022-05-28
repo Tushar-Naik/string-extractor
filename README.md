@@ -12,9 +12,9 @@
     	<img src="https://img.shields.io/github/license/tushar-naik/string-extractor" alt="license" />
     </a>
     <a href=".github/badges/jacoco.svg">
-    	<img src=".github/badges/branches.svg"/>
+    	<img src=".github/badges/jacoco.svg"/>
     </a>
-    <a href=".github/badges/jacoco.svg">
+    <a href=".github/badges/branches.svg">
     	<img src=".github/badges/branches.svg"/>
     </a>
   </p>
