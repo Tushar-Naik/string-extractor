@@ -111,13 +111,28 @@ Here is another example:
 ## Features
 
 - Proper error handling
-- Allows multiple extractions
+- Allows multiple extractions.<br>
+  You can extract into multiple variables using the same rule 
 - Supports different types of extractions
-    1. Exact match Variable     : `org.${{domain:apache}}.org.dc.node3`
-    2. Regex Match Variable     : `org.${{domain:[a-z]+}}.org.dc.node3`
-    3. Last Variable            : `org.${{domain}}`
-    4. Discarded Regex Variable : `org.${{:[a-z]+}}.org.dc.node3`
-    5. Discarded Exact Match    : `org.${{:apache}}.org.dc.node3`
+    1. Exact match Variable     : `org.${{domain:apache}}.org.dc.node3`<br>
+       The match happens only if the string had exactly `apache` in the specified position. Eg: org.**apache**.org.dc.node3. This match will be extracted and stored into the variable `domain`
+    2. Regex Match Variable     : `org.${{domain:[a-z]+}}.org.dc.node3`<br>
+       The match happens to the string the complies to the regex, after the string `org.`. Eg: org.**something**.org.dc.node3. This match will be extracted and stored into the variable `domain`
+    3. Last Variable            : `org.${{domain}}`<br>
+       The match happens to all text that follows the string `org.`. Eg: org.**something.org.dc.node3**. This match will be extracted and stored into the variable `domain`
+    4. Discarded Regex Variable : `org.${{:[a-z]+}}.org.dc.node3`<br>
+       The match happens to the string the complies to the regex, after the string `org.`. Eg: org.**something**.org.dc.node3. This match will be extracted out, but **NOT** stored into any variable
+    5. Discarded Exact Match    : `org.${{:apache}}.org.dc.node3` <br>
+       The match happens only if the string had exactly `apache` in the specified position. Eg: org.**apache**.org.dc.node3. This match will be extracted out, but **NOT** stored into any variable
+- Skipping regex matched variables<br> 
+  In scenarios where you want to skip variable extractions, for a regex, you can do so by supplying a set of blacklisted variables.
+  ```java
+    Extractor extractor = ExtractorBuilder.newBuilder().blueprint(blueprint)
+                        .withSkippedVariable("skipped")
+                        .build();
+  ```
+  With this: <br>
+  `This is ${{skipped:[A-Za-z]+}}. Guns in my ${{place:}}`, the first regex will be skipped
 
 ### Things to remember:
 

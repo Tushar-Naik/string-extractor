@@ -14,10 +14,15 @@
 
 package io.github.tushar.naik.stringextractor;
 
+import lombok.Value;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -30,12 +35,6 @@ import java.util.regex.PatternSyntaxException;
  */
 public class StringExtractor implements Extractor {
     private static final Pattern STR_WITH_SPECIAL_CHARACTERS = Pattern.compile("[^a-zA-Z\\d]");
-
-    private final String remains;
-    private final boolean failOnStringRemainingAfterExtraction;
-    private final List<ParsedComponent> parsedComponents;
-    private final int numberOfVariables;
-
     /**
      * a visitor on the variable types, which returns true if it was of type {@link LastVariable}
      */
@@ -65,7 +64,6 @@ public class StringExtractor implements Extractor {
             return false;
         }
     };
-
     /**
      * A visitor on the component, that returns true if applied on a {@link VariableComponent} typed object
      */
@@ -80,6 +78,10 @@ public class StringExtractor implements Extractor {
             return true;
         }
     };
+    private final boolean failOnStringRemainingAfterExtraction;
+    private final List<ParsedComponent> parsedComponents;
+    private final int numberOfVariables;
+    private final Set<String> skippedVariables;
 
     public StringExtractor(final String blueprint) throws BlueprintParseError {
         this(blueprint, false);
@@ -87,7 +89,7 @@ public class StringExtractor implements Extractor {
 
     public StringExtractor(final String blueprint, final boolean failOnStringRemainingAfterExtraction)
             throws BlueprintParseError {
-        this(blueprint, '$', '{', ':', '}', failOnStringRemainingAfterExtraction);
+        this(blueprint, '$', '{', ':', '}', failOnStringRemainingAfterExtraction, Collections.emptySet());
     }
 
     /**
@@ -99,6 +101,7 @@ public class StringExtractor implements Extractor {
      * @param variableSuffix                       character that represents the suffix
      * @param failOnStringRemainingAfterExtraction set this to true if you want to ignore if there are dangling
      *                                             characters after the last variable
+     * @param skippedVariables
      * @throws BlueprintParseError any error while parsing the blueprint
      */
     public StringExtractor(final String blueprint,
@@ -106,7 +109,8 @@ public class StringExtractor implements Extractor {
                            final char variablePrefix,
                            final char regexSeparator,
                            final char variableSuffix,
-                           final boolean failOnStringRemainingAfterExtraction) throws BlueprintParseError {
+                           final boolean failOnStringRemainingAfterExtraction,
+                           final Set<String> skippedVariables) throws BlueprintParseError {
 
         /* a base condition check */
         checkCondition(variableStart == variablePrefix ||
@@ -119,12 +123,12 @@ public class StringExtractor implements Extractor {
 
         this.failOnStringRemainingAfterExtraction = failOnStringRemainingAfterExtraction;
         this.parsedComponents = new ArrayList<>();
+        this.skippedVariables = skippedVariables;
 
-        /* Just to be clear, I'm not proud of what the code below, need to move it to a proper LL(1) language parser */
+        /* Just to be clear, I'm not proud of the code below, need to move it to a proper LL(1) language parser */
 
         final char[] chars = blueprint.toCharArray();
         final StringBuilder collected = new StringBuilder();
-        final StringBuilder remainsBuilder = new StringBuilder();
         final StringBuilder variableName = new StringBuilder();
 
         boolean variableIsBeingExtracted = false;
@@ -136,7 +140,6 @@ public class StringExtractor implements Extractor {
                 if (collected.length() != 0) {
                     final String collectedString = collected.toString();
                     parsedComponents.add(new ExactMatchComponent(collectedString));
-                    remainsBuilder.append(collectedString);
                     Utils.clearStringBuilder(collected);
                 }
                 variableIsBeingExtracted = true;
@@ -166,10 +169,8 @@ public class StringExtractor implements Extractor {
         if (collected.length() != 0) {
             final String collectedString = collected.toString();
             parsedComponents.add(new ExactMatchComponent(collectedString));
-            remainsBuilder.append(collected);
         }
         checkCondition(variableIsBeingExtracted, BlueprintParseErrorCode.VARIABLE_NOT_CLOSED);
-        remains = remainsBuilder.toString();
         numberOfVariables = (int) parsedComponents.stream().filter(k -> k.accept(IS_VARIABLE)).count();
     }
 
@@ -182,14 +183,22 @@ public class StringExtractor implements Extractor {
     @Override
     public ExtractionResult extractFrom(final String source) {
         final Map<String, Object> extractions = new HashMap<>(numberOfVariables);
+
+        /* drain or string_yet_to_be_parsed represents how much of the string is remaining. We start with the source */
         String drain = source;
+        StringBuilder extractedString = new StringBuilder();
 
         for (final ParsedComponent parsedComponent : parsedComponents) {
+            /* an effective final variable to pass along the current value into the generator function below */
             final String finalDrain = drain;
-            drain = parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
-            if (drain == null) {
+
+            Optional<ExtractedResult> extractedResult =
+                    parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
+            if (!extractedResult.isPresent()) {
                 return ExtractionResult.error();
             }
+            drain = extractedResult.get().getDrain();
+            extractedString.append(extractedResult.get().getExtraction());
         }
 
         if (failOnStringRemainingAfterExtraction && !Utils.isNullOrEmpty(drain)) {
@@ -197,7 +206,7 @@ public class StringExtractor implements Extractor {
         }
 
         return ExtractionResult.builder()
-                .extractedString(remains + drain)
+                .extractedString(extractedString + drain)
                 .extractions(extractions)
                 .build();
     }
@@ -259,83 +268,116 @@ public class StringExtractor implements Extractor {
         }
     }
 
-    private ParsedComponentVisitor<String> generateDrainFromComponent(final Map<String, Object> extractions,
-                                                                      final String finalDrain) {
-        return new ParsedComponentVisitor<String>() {
+    private ParsedComponentVisitor<Optional<ExtractedResult>> generateDrainFromComponent(
+            final Map<String, Object> extractions,
+            final String finalDrain) {
+        return new ParsedComponentVisitor<Optional<ExtractedResult>>() {
             @Override
-            public String visit(final ExactMatchComponent exactMatchComponent) {
+            public Optional<ExtractedResult> visit(final ExactMatchComponent exactMatchComponent) {
                 if (finalDrain.startsWith(exactMatchComponent.getCharacters())) {
-                    return finalDrain.substring(exactMatchComponent.getCharacters().length());
+                    final String remainingString = finalDrain.substring(exactMatchComponent.getCharacters().length());
+                    return Optional.of(new ExtractedResult(exactMatchComponent.getCharacters(), remainingString));
                 }
-                return null;
+                return Optional.empty();
             }
 
             @Override
-            public String visit(final VariableComponent variableComponent) {
+            public Optional<ExtractedResult> visit(final VariableComponent variableComponent) {
                 final Variable variable = variableComponent.getVariable();
                 return variable.accept(generateDrainByExtractingVariable());
             }
 
-            private VariableVisitor<String> generateDrainByExtractingVariable() {
-                return new VariableVisitor<String>() {
+            private VariableVisitor<Optional<ExtractedResult>> generateDrainByExtractingVariable() {
+                return new VariableVisitor<Optional<ExtractedResult>>() {
                     @Override
-                    public String visit(final RegexMatchVariable regexMatchVariable) {
+                    public Optional<ExtractedResult> visit(final RegexMatchVariable regexMatchVariable) {
                         final Pattern pattern = regexMatchVariable.getPattern();
                         final Matcher matcher = pattern.matcher(finalDrain);
                         if (matcher.find()) {
                             final String firstMatch = matcher.group(0);
-                            extractions.put(regexMatchVariable.getVariableName(), firstMatch);
-                            return finalDrain.substring(firstMatch.length());
+                            String extraction = "";
+                            if (skippedVariables.contains(regexMatchVariable.getVariableName())) {
+                                extraction = firstMatch;
+                            } else {
+                                extractions.put(regexMatchVariable.getVariableName(), firstMatch);
+                            }
+                            final String remainingString = finalDrain.substring(firstMatch.length());
+                            return Optional.of(new ExtractedResult(extraction, remainingString));
                         }
-                        return null;
+                        return Optional.empty();
                     }
 
                     @Override
-                    public String visit(final ExactMatchVariable exactMatchVariable) {
+                    public Optional<ExtractedResult> visit(final ExactMatchVariable exactMatchVariable) {
                         if (finalDrain.startsWith(exactMatchVariable.getMatchString())) {
+                            String extraction = "";
+                            if (skippedVariables.contains(exactMatchVariable.getVariableName())) {
+                                extraction = exactMatchVariable.getMatchString();
+                            } else {
+                                extractions.put(exactMatchVariable.getVariableName(),
+                                                exactMatchVariable.getMatchString());
+                            }
                             extractions.put(exactMatchVariable.getVariableName(), exactMatchVariable.getMatchString());
-                            return finalDrain.substring(exactMatchVariable.getMatchString().length());
+                            final String remainingString = finalDrain.substring(
+                                    exactMatchVariable.getMatchString().length());
+                            return Optional.of(new ExtractedResult(extraction, remainingString));
                         }
-                        return null;
+                        return Optional.empty();
                     }
 
                     @Override
-                    public String visit(final DiscardedRegexMatchVariable discardedRegexMatchVariable) {
+                    public Optional<ExtractedResult> visit(
+                            final DiscardedRegexMatchVariable discardedRegexMatchVariable) {
                         final Pattern pattern = discardedRegexMatchVariable.getPattern();
                         final Matcher matcher = pattern.matcher(finalDrain);
                         if (matcher.find()) {
                             final String firstMatch = matcher.group(0);
-                            return finalDrain.substring(firstMatch.length());
+                            final String remainingString = finalDrain.substring(firstMatch.length());
+                            return Optional.of(new ExtractedResult("", remainingString));
                         }
-                        return null;
+                        return Optional.empty();
                     }
 
                     @Override
-                    public String visit(final LastVariable lastVariable) {
+                    public Optional<ExtractedResult> visit(final LastVariable lastVariable) {
                         if (!Utils.isNullOrEmpty(finalDrain)) {
+                            String extraction = "";
+                            if (skippedVariables.contains(lastVariable.getVariableName())) {
+                                extraction = finalDrain;
+                            } else {
+                                extractions.put(lastVariable.getVariableName(), finalDrain);
+                            }
                             extractions.put(lastVariable.getVariableName(), finalDrain);
-                            return "";
+                            return Optional.of(new ExtractedResult(extraction, ""));
                         }
-                        return null;
+                        return Optional.empty();
                     }
 
                     @Override
-                    public String visit(final DiscardedExactMatchVariable discardedExactMatchVariable) {
+                    public Optional<ExtractedResult> visit(
+                            final DiscardedExactMatchVariable discardedExactMatchVariable) {
                         if (finalDrain.startsWith(discardedExactMatchVariable.getMatchString())) {
-                            return finalDrain.substring(discardedExactMatchVariable.getMatchString().length());
+                            final String remainingString = finalDrain.substring(
+                                    discardedExactMatchVariable.getMatchString().length());
+                            return Optional.of(new ExtractedResult("", remainingString));
                         }
-                        return null;
+                        return Optional.empty();
                     }
                 };
             }
         };
     }
 
-
     private void checkCondition(final boolean condition, final BlueprintParseErrorCode invalidCharacterSettings)
             throws BlueprintParseError {
         if (condition) {
             throw new BlueprintParseError(invalidCharacterSettings);
         }
+    }
+
+    @Value
+    private static class ExtractedResult {
+        String extraction;
+        String drain;
     }
 }

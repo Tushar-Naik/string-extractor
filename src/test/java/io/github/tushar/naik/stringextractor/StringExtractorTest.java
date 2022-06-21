@@ -37,8 +37,10 @@ class StringExtractorTest {
                             final String source,
                             final String result,
                             final Map<String, Object> extractedMap) throws BlueprintParseError {
-
-        final StringExtractor stringExtractor = new StringExtractor(blueprint);
+        final Extractor stringExtractor =
+                ExtractorBuilder.newBuilder().blueprint(blueprint)
+                        .withSkippedVariable("skipped")
+                        .build();
         final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
         assertEquals(result, extractionResult.getExtractedString());
         TestUtils.assertMapEquals(extractedMap, extractionResult.getExtractions());
@@ -172,8 +174,13 @@ class StringExtractorTest {
                 Arguments.of("This is ${{:[A-Za-z]+}}. Guns in my ${{place}}",
                              "This is America. Guns in my area",
                              "This is . Guns in my ",
-                             ImmutableMap.of("place", "area"))
+                             ImmutableMap.of("place", "area")),
 
+                /* test retained variables */
+                Arguments.of("This is ${{skipped:[A-Za-z]+}}. Guns in my ${{place:}}",
+                             "This is America. Guns in my area",
+                             "This is America. Guns in my ",
+                             ImmutableMap.of("place", "area"))
                         );
     }
 

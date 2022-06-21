@@ -15,13 +15,8 @@
 package io.github.tushar.naik.stringextractor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 /**
  * This class may be used for extracting from multiple blueprints.
@@ -38,11 +33,17 @@ public class BulkStringExtractor implements Extractor {
                                final char variablePrefix,
                                final char regexSeparator,
                                final char variableSuffix,
-                               final boolean failOnStringRemainingAfterExtraction) throws BlueprintParseError {
+                               final boolean failOnStringRemainingAfterExtraction,
+                               final Set<String> skippedVariables) throws BlueprintParseError {
         stringExtractors = new ArrayList<>();
         for (final String blueprint : blueprints) {
-            stringExtractors.add(new StringExtractor(blueprint, variableStart, variablePrefix, regexSeparator,
-                                                     variableSuffix, failOnStringRemainingAfterExtraction));
+            stringExtractors.add(new StringExtractor(blueprint,
+                                                     variableStart,
+                                                     variablePrefix,
+                                                     regexSeparator,
+                                                     variableSuffix,
+                                                     failOnStringRemainingAfterExtraction,
+                                                     skippedVariables));
         }
     }
 

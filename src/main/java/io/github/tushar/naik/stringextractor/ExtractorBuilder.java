@@ -1,7 +1,9 @@
 package io.github.tushar.naik.stringextractor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static io.github.tushar.naik.stringextractor.BlueprintParseErrorCode.INCORRECT_BUILDER_USAGE;
 
@@ -11,6 +13,8 @@ public class ExtractorBuilder {
     private char regexSeparator = ':';
     private char variableSuffix = '}';
     private boolean failOnStringRemainingAfterExtraction = false;
+
+    private final Set<String> skippedVariables = new HashSet<>();
 
     private final List<String> blueprints = new ArrayList<>();
 
@@ -48,6 +52,15 @@ public class ExtractorBuilder {
         return this;
     }
 
+    public ExtractorBuilder withSkippedVariables(Set<String> skippedVariables) {
+        this.skippedVariables.addAll(skippedVariables);
+        return this;
+    }
+    public ExtractorBuilder withSkippedVariable(String skippedVariable) {
+        this.skippedVariables.add(skippedVariable);
+        return this;
+    }
+
     public ExtractorBuilder failOnStringRemainingAfterExtraction(boolean failOnStringRemainingAfterExtraction) {
         this.failOnStringRemainingAfterExtraction = failOnStringRemainingAfterExtraction;
         return this;
@@ -59,10 +72,10 @@ public class ExtractorBuilder {
         }
         if (blueprints.size() == 1) {
             return new StringExtractor(blueprints.stream().findAny().orElse(""), variableStart, variablePrefix,
-                                       regexSeparator, variableSuffix, failOnStringRemainingAfterExtraction);
+                                       regexSeparator, variableSuffix, failOnStringRemainingAfterExtraction, skippedVariables);
         }
         return new BulkStringExtractor(blueprints, variableStart, variablePrefix, regexSeparator, variableSuffix,
-                                       failOnStringRemainingAfterExtraction);
+                                       failOnStringRemainingAfterExtraction, skippedVariables);
     }
 
 }
