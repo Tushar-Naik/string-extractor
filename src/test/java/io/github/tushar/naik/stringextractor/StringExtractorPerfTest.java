@@ -84,7 +84,7 @@ class StringExtractorPerfTest {
                 Arguments.of(100000,
                              "org.apache.kafka.common.metrics.kafka-sink_${{host:}}",
                              "org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3",
-                             100)
+                             200)
                         );
     }
 
@@ -104,7 +104,7 @@ class StringExtractorPerfTest {
         final long timeForEvaluation = performanceEvaluator.evaluateTime(100000,
                                                                          () -> stringExtractor.extractFrom(metric));
         System.out.println("stringExtractor = " + timeForEvaluation);
-        Assertions.assertTrue(timeForEvaluation < timeForEvaluationWithSplit);
+        Assertions.assertTrue(1.2 * timeForEvaluation  < timeForEvaluationWithSplit); // giving 20% buffer
 
     }
 }

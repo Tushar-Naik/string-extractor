@@ -15,6 +15,7 @@
 package io.github.tushar.naik.stringextractor;
 
 import lombok.Value;
+import lombok.val;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -127,9 +127,9 @@ public class StringExtractor implements Extractor {
 
         /* Just to be clear, I'm not proud of the code below, need to move it to a proper LL(1) language parser */
 
-        final char[] chars = blueprint.toCharArray();
-        final StringBuilder collected = new StringBuilder();
-        final StringBuilder variableName = new StringBuilder();
+        val chars = blueprint.toCharArray();
+        val collected = new StringBuilder();
+        val variableName = new StringBuilder();
 
         boolean variableIsBeingExtracted = false;
         boolean lastVariableInvolved = false;
@@ -190,7 +190,7 @@ public class StringExtractor implements Extractor {
 
         for (final ParsedComponent parsedComponent : parsedComponents) {
             /* an effective final variable to pass along the current value into the generator function below */
-            final String finalDrain = drain;
+            val finalDrain = drain;
 
             Optional<ExtractedResult> extractedResult =
                     parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
@@ -235,7 +235,7 @@ public class StringExtractor implements Extractor {
 
         /* validations */
         checkCondition(Utils.isNullOrEmpty(variableNameRegex), BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
-        final String[] variableRegexSplits = variableNameRegex.split(String.valueOf(regexSeparator));
+        val variableRegexSplits = variableNameRegex.split(String.valueOf(regexSeparator));
         checkCondition(variableRegexSplits.length > 2, BlueprintParseErrorCode.INCORRECT_VARIABLE_REPRESENTATION);
         checkCondition(variableRegexSplits.length == 0, BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
 
@@ -250,7 +250,7 @@ public class StringExtractor implements Extractor {
                 return new DiscardedExactMatchVariable(variableRegexSplits[1]);
             }
             try {
-                final Pattern compile = Pattern.compile(variableRegexSplits[1]);
+                val compile = Pattern.compile(variableRegexSplits[1]);
                 return new DiscardedRegexMatchVariable(compile);
             } catch (PatternSyntaxException e) {
                 return new DiscardedExactMatchVariable(variableRegexSplits[1]);
@@ -261,7 +261,7 @@ public class StringExtractor implements Extractor {
             if (!STR_WITH_SPECIAL_CHARACTERS.matcher(variableRegexSplits[1]).find()) {
                 return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
             }
-            final Pattern compile = Pattern.compile(variableRegexSplits[1]);
+            val compile = Pattern.compile(variableRegexSplits[1]);
             return new RegexMatchVariable(variableRegexSplits[0], compile);
         } catch (PatternSyntaxException exception) {
             return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
@@ -270,12 +270,12 @@ public class StringExtractor implements Extractor {
 
     private ParsedComponentVisitor<Optional<ExtractedResult>> generateDrainFromComponent(
             final Map<String, Object> extractions,
-            final String finalDrain) {
+            final String drain) {
         return new ParsedComponentVisitor<Optional<ExtractedResult>>() {
             @Override
             public Optional<ExtractedResult> visit(final ExactMatchComponent exactMatchComponent) {
-                if (finalDrain.startsWith(exactMatchComponent.getCharacters())) {
-                    final String remainingString = finalDrain.substring(exactMatchComponent.getCharacters().length());
+                if (drain.startsWith(exactMatchComponent.getCharacters())) {
+                    val remainingString = drain.substring(exactMatchComponent.getCharacters().length());
                     return Optional.of(new ExtractedResult(exactMatchComponent.getCharacters(), remainingString));
                 }
                 return Optional.empty();
@@ -283,7 +283,7 @@ public class StringExtractor implements Extractor {
 
             @Override
             public Optional<ExtractedResult> visit(final VariableComponent variableComponent) {
-                final Variable variable = variableComponent.getVariable();
+                val variable = variableComponent.getVariable();
                 return variable.accept(generateDrainByExtractingVariable());
             }
 
@@ -291,17 +291,17 @@ public class StringExtractor implements Extractor {
                 return new VariableVisitor<Optional<ExtractedResult>>() {
                     @Override
                     public Optional<ExtractedResult> visit(final RegexMatchVariable regexMatchVariable) {
-                        final Pattern pattern = regexMatchVariable.getPattern();
-                        final Matcher matcher = pattern.matcher(finalDrain);
+                        val pattern = regexMatchVariable.getPattern();
+                        val matcher = pattern.matcher(drain);
                         if (matcher.find()) {
-                            final String firstMatch = matcher.group(0);
+                            val firstMatch = matcher.group(0);
                             String extraction = "";
                             if (skippedVariables.contains(regexMatchVariable.getVariableName())) {
                                 extraction = firstMatch;
                             } else {
                                 extractions.put(regexMatchVariable.getVariableName(), firstMatch);
                             }
-                            final String remainingString = finalDrain.substring(firstMatch.length());
+                            val remainingString = drain.substring(firstMatch.length());
                             return Optional.of(new ExtractedResult(extraction, remainingString));
                         }
                         return Optional.empty();
@@ -309,7 +309,7 @@ public class StringExtractor implements Extractor {
 
                     @Override
                     public Optional<ExtractedResult> visit(final ExactMatchVariable exactMatchVariable) {
-                        if (finalDrain.startsWith(exactMatchVariable.getMatchString())) {
+                        if (drain.startsWith(exactMatchVariable.getMatchString())) {
                             String extraction = "";
                             if (skippedVariables.contains(exactMatchVariable.getVariableName())) {
                                 extraction = exactMatchVariable.getMatchString();
@@ -318,8 +318,7 @@ public class StringExtractor implements Extractor {
                                                 exactMatchVariable.getMatchString());
                             }
                             extractions.put(exactMatchVariable.getVariableName(), exactMatchVariable.getMatchString());
-                            final String remainingString = finalDrain.substring(
-                                    exactMatchVariable.getMatchString().length());
+                            val remainingString = drain.substring(exactMatchVariable.getMatchString().length());
                             return Optional.of(new ExtractedResult(extraction, remainingString));
                         }
                         return Optional.empty();
@@ -328,11 +327,11 @@ public class StringExtractor implements Extractor {
                     @Override
                     public Optional<ExtractedResult> visit(
                             final DiscardedRegexMatchVariable discardedRegexMatchVariable) {
-                        final Pattern pattern = discardedRegexMatchVariable.getPattern();
-                        final Matcher matcher = pattern.matcher(finalDrain);
+                        val pattern = discardedRegexMatchVariable.getPattern();
+                        val matcher = pattern.matcher(drain);
                         if (matcher.find()) {
-                            final String firstMatch = matcher.group(0);
-                            final String remainingString = finalDrain.substring(firstMatch.length());
+                            val firstMatch = matcher.group(0);
+                            val remainingString = drain.substring(firstMatch.length());
                             return Optional.of(new ExtractedResult("", remainingString));
                         }
                         return Optional.empty();
@@ -340,14 +339,14 @@ public class StringExtractor implements Extractor {
 
                     @Override
                     public Optional<ExtractedResult> visit(final LastVariable lastVariable) {
-                        if (!Utils.isNullOrEmpty(finalDrain)) {
+                        if (!Utils.isNullOrEmpty(drain)) {
                             String extraction = "";
                             if (skippedVariables.contains(lastVariable.getVariableName())) {
-                                extraction = finalDrain;
+                                extraction = drain;
                             } else {
-                                extractions.put(lastVariable.getVariableName(), finalDrain);
+                                extractions.put(lastVariable.getVariableName(), drain);
                             }
-                            extractions.put(lastVariable.getVariableName(), finalDrain);
+                            extractions.put(lastVariable.getVariableName(), drain);
                             return Optional.of(new ExtractedResult(extraction, ""));
                         }
                         return Optional.empty();
@@ -356,8 +355,8 @@ public class StringExtractor implements Extractor {
                     @Override
                     public Optional<ExtractedResult> visit(
                             final DiscardedExactMatchVariable discardedExactMatchVariable) {
-                        if (finalDrain.startsWith(discardedExactMatchVariable.getMatchString())) {
-                            final String remainingString = finalDrain.substring(
+                        if (drain.startsWith(discardedExactMatchVariable.getMatchString())) {
+                            val remainingString = drain.substring(
                                     discardedExactMatchVariable.getMatchString().length());
                             return Optional.of(new ExtractedResult("", remainingString));
                         }
