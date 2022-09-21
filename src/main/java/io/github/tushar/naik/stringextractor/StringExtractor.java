@@ -294,7 +294,7 @@ public class StringExtractor implements Extractor {
         }
 
         if (lhs.equals(staticAttachVariable)) {
-            return new ContextMappedVariable(rhs);
+            return new StaticAttachVariable(rhs);
         }
 
         try {
