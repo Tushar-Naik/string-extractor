@@ -12,21 +12,19 @@
  * under the License.
  */
 
-package io.github.tushar.naik.stringextractor;
+package io.github.tushar.naik.stringextractor.variable;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-import java.util.regex.Pattern;
-
 @Value
 @EqualsAndHashCode(callSuper = true)
-class RegexMatchVariable extends Variable {
+public class ExactMatchVariable extends Variable {
     String variableName;
-    Pattern pattern;
+    String matchString;
 
     @Override
-    <T> T accept(final VariableVisitor<T> visitor) {
+    public <T> T accept(final VariableVisitor<T> visitor) {
         return visitor.visit(this);
     }
 }

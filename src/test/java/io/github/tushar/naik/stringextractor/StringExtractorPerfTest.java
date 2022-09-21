@@ -21,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -35,12 +36,28 @@ class StringExtractorPerfTest {
         PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
         final StringExtractor stringExtractor = new StringExtractor(blueprint);
         float evaluationTime = performanceEvaluator
-                .evaluateTime(numberOfEvaluations, () -> stringExtractor.extractFrom(source));
+                .evaluateTime(numberOfEvaluations, () -> stringExtractor.extractFrom(source, Collections.emptyMap()));
         System.out.printf("%s evaluations for blueprint with %d variables took %fms\n", numberOfEvaluations,
                           stringExtractor.numberOfVariables(),
                           evaluationTime);
         Assertions.assertTrue(evaluationTime < maxEvalTimeExpected);
     }
+
+//    @ParameterizedTest
+//    @MethodSource("evaluations")
+//    void perfTest2(final int numberOfEvaluations,
+//                  final String blueprint,
+//                  final String source,
+//                  final int maxEvalTimeExpected) throws BlueprintParseError {
+//        PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
+//        final StringExtractor2 stringExtractor = new StringExtractor2(blueprint);
+//        float evaluationTime = performanceEvaluator
+//                .evaluateTime(numberOfEvaluations, () -> stringExtractor.extractFrom(source));
+//        System.out.printf("%s evaluations for blueprint with %d variables took %fms\n", numberOfEvaluations,
+//                          stringExtractor.numberOfVariables(),
+//                          evaluationTime);
+//        Assertions.assertTrue(evaluationTime < maxEvalTimeExpected);
+//    }
 
     private static Stream<Arguments> evaluations() {
         return Stream.of(
@@ -79,6 +96,10 @@ class StringExtractorPerfTest {
                              "A successful man is one who can lay a firm foundation with the bricks others have "
                                      + "thrown at him",
                              1000),
+                Arguments.of(100000,
+                             "com.phonepe.drove.executor.containers.${{skipped:[^.]+}}.${{:instance.}}${{instance:[^.]+}}${{:.}}",
+                             "com.phonepe.drove.executor.containers.gandalf.instance.ea2c2e4d-0d96-4039-bae9-74ff12ce1cb6.network_rx_bytes.field.value",
+                             1000),
 
                 /* no regex - should be really fast */
                 Arguments.of(100000,
@@ -93,18 +114,29 @@ class StringExtractorPerfTest {
         final PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
         String metric = "org.apache.kafka.common.metrics.kafka-sink_prd-001.org.dc.node3";
 
-        /* this is expensive */
-        final long timeForEvaluationWithSplit = performanceEvaluator.evaluateTime(100000,
-                                                                                  () -> metric.split("\\."));
-        System.out.println("split = " + timeForEvaluationWithSplit);
-
-        final StringExtractor stringExtractor = new StringExtractor(
-                "org.apache.kafka.common.metrics.kafka-sink_${{host:}}");
-
-        final long timeForEvaluation = performanceEvaluator.evaluateTime(100000,
-                                                                         () -> stringExtractor.extractFrom(metric));
-        System.out.println("stringExtractor = " + timeForEvaluation);
-        Assertions.assertTrue(1.2 * timeForEvaluation  < timeForEvaluationWithSplit); // giving 20% buffer
+//
+//
+//        final StringExtractor2 stringExtractor2 = new StringExtractor2(
+//                "org.apache.kafka.common.metrics.kafka-sink_${{host:}}");
+//
+//        final long timeForEvaluation2 = performanceEvaluator.evaluateTime(500000,
+//                                                                          () -> stringExtractor2.extractFrom(metric));
+//        System.out.println("stringExtractor2 = " + timeForEvaluation2);
+//
+//
+//        final StringExtractor stringExtractor = new StringExtractor(
+//                "org.apache.kafka.common.metrics.kafka-sink_${{host:}}");
+//
+//        final long timeForEvaluation = performanceEvaluator.evaluateTime(500000,
+//                                                                         () -> stringExtractor.extractFrom(metric));
+//
+//        /* this is expensive */
+//        final long timeForEvaluationWithSplit = performanceEvaluator.evaluateTime(500000,
+//                                                                                  () -> metric.split("\\."));
+//        System.out.println("split = " + timeForEvaluationWithSplit);
+//        System.out.println("stringExtractor = " + timeForEvaluation);
+////        Assertions.assertTrue(timeForEvaluation < timeForEvaluationWithSplit);
+//        Assertions.assertTrue(timeForEvaluation < timeForEvaluationWithSplit);
 
     }
 }

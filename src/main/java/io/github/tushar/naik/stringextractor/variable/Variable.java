@@ -12,19 +12,13 @@
  * under the License.
  */
 
-package io.github.tushar.naik.stringextractor;
+package io.github.tushar.naik.stringextractor.variable;
 
-import lombok.EqualsAndHashCode;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-@Value
-@EqualsAndHashCode(callSuper = true)
-class DiscardedExactMatchVariable extends Variable {
-
-    String matchString;
-
-    @Override
-    <T> T accept(final VariableVisitor<T> visitor) {
-        return visitor.visit(this);
-    }
+@Getter
+@AllArgsConstructor
+public abstract class Variable {
+    public abstract <T> T accept(VariableVisitor<T> visitor);
 }

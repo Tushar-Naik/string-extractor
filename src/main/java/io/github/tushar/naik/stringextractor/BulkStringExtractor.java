@@ -15,7 +15,9 @@
 package io.github.tushar.naik.stringextractor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -28,13 +30,16 @@ import java.util.Set;
 public class BulkStringExtractor implements Extractor {
     private final List<StringExtractor> stringExtractors;
 
+    @SuppressWarnings("java:S107")
     public BulkStringExtractor(final List<String> blueprints,
                                final char variableStart,
                                final char variablePrefix,
                                final char regexSeparator,
                                final char variableSuffix,
                                final boolean failOnStringRemainingAfterExtraction,
-                               final Set<String> skippedVariables) throws BlueprintParseError {
+                               final String skippedVariable,
+                               final String contextMappedVariable,
+                               final String staticAttachVariable) throws BlueprintParseError {
         stringExtractors = new ArrayList<>();
         for (final String blueprint : blueprints) {
             stringExtractors.add(new StringExtractor(blueprint,
@@ -43,7 +48,9 @@ public class BulkStringExtractor implements Extractor {
                                                      regexSeparator,
                                                      variableSuffix,
                                                      failOnStringRemainingAfterExtraction,
-                                                     skippedVariables));
+                                                     skippedVariable,
+                                                     contextMappedVariable,
+                                                     staticAttachVariable));
         }
     }
 
@@ -51,14 +58,15 @@ public class BulkStringExtractor implements Extractor {
      * Given the precompiled set of blueprints(as part of the constructor),
      * try to extract from source string.
      *
-     * @param source string used as source
+     * @param source     string used as source
+     * @param contextMap map containing runtime context for replacements
      * @return ExtractionResult if any of the blueprint extractions were successful, else
      * {@link ExtractionResult#error()} if none match
      */
     @Override
-    public ExtractionResult extractFrom(final String source) {
+    public ExtractionResult extractFrom(final String source, final Map<String, String> contextMap) {
         for (final StringExtractor stringExtractor : stringExtractors) {
-            final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
+            final ExtractionResult extractionResult = stringExtractor.extractFrom(source, contextMap);
             if (!extractionResult.isError()) {
                 return extractionResult;
             }
