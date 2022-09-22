@@ -1,22 +1,21 @@
 package io.github.tushar.naik.stringextractor;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static io.github.tushar.naik.stringextractor.BlueprintParseErrorCode.INCORRECT_BUILDER_USAGE;
 
 public class ExtractorBuilder {
+
+    private final List<String> blueprints = new ArrayList<>();
     private char variableStart = '$';
     private char variablePrefix = '{';
     private char regexSeparator = ':';
     private char variableSuffix = '}';
     private boolean failOnStringRemainingAfterExtraction = false;
-
-    private final Set<String> skippedVariables = new HashSet<>();
-
-    private final List<String> blueprints = new ArrayList<>();
+    private String skippedVariable = "";
+    private String contextMappedVariable = "";
+    private String staticAttachVariable = "";
 
     public static ExtractorBuilder newBuilder() {
         return new ExtractorBuilder();
@@ -52,12 +51,18 @@ public class ExtractorBuilder {
         return this;
     }
 
-    public ExtractorBuilder withSkippedVariables(Set<String> skippedVariables) {
-        this.skippedVariables.addAll(skippedVariables);
+    public ExtractorBuilder withSkippedVariable(String skippedVariable) {
+        this.skippedVariable = skippedVariable;
         return this;
     }
-    public ExtractorBuilder withSkippedVariable(String skippedVariable) {
-        this.skippedVariables.add(skippedVariable);
+
+    public ExtractorBuilder withContextMappedVariable(String contextMappedVariable) {
+        this.contextMappedVariable = contextMappedVariable;
+        return this;
+    }
+
+    public ExtractorBuilder withStaticAttachVariable(String staticAttachVariable) {
+        this.staticAttachVariable = staticAttachVariable;
         return this;
     }
 
@@ -72,10 +77,12 @@ public class ExtractorBuilder {
         }
         if (blueprints.size() == 1) {
             return new StringExtractor(blueprints.stream().findAny().orElse(""), variableStart, variablePrefix,
-                                       regexSeparator, variableSuffix, failOnStringRemainingAfterExtraction, skippedVariables);
+                                       regexSeparator, variableSuffix, failOnStringRemainingAfterExtraction,
+                                       skippedVariable, contextMappedVariable, staticAttachVariable);
         }
         return new BulkStringExtractor(blueprints, variableStart, variablePrefix, regexSeparator, variableSuffix,
-                                       failOnStringRemainingAfterExtraction, skippedVariables);
+                                       failOnStringRemainingAfterExtraction, skippedVariable, contextMappedVariable,
+                                       staticAttachVariable);
     }
 
 }

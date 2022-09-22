@@ -3,6 +3,8 @@ package io.github.tushar.naik.stringextractor;
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExtractorBuilderTest {
@@ -17,7 +19,8 @@ class ExtractorBuilderTest {
                 .blueprint("Bruno mars says, when i see your #@@what:[a-z]+^^")
                 .build();
 
-        final ExtractionResult extractionResult = extractor.extractFrom("Bruno mars says, when i see your face");
+        final ExtractionResult extractionResult = extractor.extractFrom("Bruno mars says, when i see your face",
+                                                                        Collections.emptyMap());
         TestUtils.assertMapEquals(ImmutableMap.of("what", "face"), extractionResult.getExtractions());
         assertEquals("Bruno mars says, when i see your ", extractionResult.getExtractedString());
     }

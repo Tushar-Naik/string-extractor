@@ -12,21 +12,20 @@
  * under the License.
  */
 
-package io.github.tushar.naik.stringextractor;
+package io.github.tushar.naik.stringextractor.variable;
 
+import io.github.tushar.naik.stringextractor.variable.Variable;
+import io.github.tushar.naik.stringextractor.variable.VariableVisitor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-import java.util.regex.Pattern;
-
 @Value
 @EqualsAndHashCode(callSuper = true)
-class ExactMatchVariable extends Variable {
+public class LastVariable extends Variable {
     String variableName;
-    String matchString;
 
     @Override
-    <T> T accept(final VariableVisitor<T> visitor) {
+    public <T> T accept(final VariableVisitor<T> visitor) {
         return visitor.visit(this);
     }
 }

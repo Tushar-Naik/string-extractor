@@ -133,6 +133,27 @@ Here is another example:
   ```
   With this: <br>
   `This is ${{skipped:[A-Za-z]+}}. Guns in my ${{place:}}`, the first regex will be skipped
+- Adding string from a context<br>
+  In scenarios where you want to add runtime variables from a context map to the final extracted string, you can use the following:
+  ```java
+    Extractor extractor = ExtractorBuilder.newBuilder().blueprint(blueprint)
+                        .withContextMappedVariable("context")
+                        .build();
+    // and then pass in a context Map<String, String> during extraction
+    extractor.extractFrom(source, ImmutableMap.of("location", "bangalore"));
+  ```
+  With this: <br>
+  `This is ${{context:location}}.`, the value of location will be pulled from the map and added to the string
+- Adding a static string<br>
+  If you don't want to pull this from a map, but want to pass along a static string, you can do that too
+  ```java
+    Extractor extractor = ExtractorBuilder.newBuilder().blueprint(blueprint)
+                        .withStaticAttachVariable("attach")
+                        .build();
+    extractor.extractFrom(source);
+  ```
+  With this: <br>
+  `This is ${{attach:bangalore}}.`, the value bangalore added to the extracted string
 
 ### Things to remember:
 

@@ -4,11 +4,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -40,7 +40,7 @@ class BulkStringExtractorTest {
                              final String result,
                              final Map<String, Object> extractedMap,
                              final boolean error) {
-        final ExtractionResult extractionResult = extractor.extractFrom(source);
+        final ExtractionResult extractionResult = extractor.extractFrom(source, Collections.emptyMap());
         if (error) {
             assertTrue(extractionResult.isError());
             return;
@@ -59,7 +59,7 @@ class BulkStringExtractorTest {
                   final boolean error) {
         PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
         float evaluationTime = performanceEvaluator
-                .evaluateTime(10000, () -> extractor.extractFrom(source));
+                .evaluateTime(10000, () -> extractor.extractFrom(source, Collections.emptyMap()));
         System.out.printf("%s evaluations for blueprint took %fms\n", 10000, evaluationTime);
         Assertions.assertTrue(evaluationTime < 500);
     }

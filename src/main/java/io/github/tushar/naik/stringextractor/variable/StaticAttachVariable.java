@@ -12,22 +12,19 @@
  * under the License.
  */
 
-package io.github.tushar.naik.stringextractor;
+package io.github.tushar.naik.stringextractor.variable;
 
-import io.github.tushar.naik.stringextractor.variable.Variable;
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
-class VariableComponent extends ParsedComponent {
-    @Getter
-    private final Variable variable;
+@Value
+@EqualsAndHashCode(callSuper = true)
+public class StaticAttachVariable extends Variable {
 
-    public VariableComponent(final Variable variable) {
-        super(ParsedComponentType.VARIABLE);
-        this.variable = variable;
-    }
+    String staticAttachString;
 
     @Override
-    public <T> T accept(final ParsedComponentVisitor<T> visitor) {
+    public <T> T accept(final VariableVisitor<T> visitor) {
         return visitor.visit(this);
     }
 }

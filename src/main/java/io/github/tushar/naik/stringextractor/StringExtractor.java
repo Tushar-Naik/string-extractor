@@ -14,16 +14,23 @@
 
 package io.github.tushar.naik.stringextractor;
 
+import io.github.tushar.naik.stringextractor.variable.ContextMappedVariable;
+import io.github.tushar.naik.stringextractor.variable.DiscardedExactMatchVariable;
+import io.github.tushar.naik.stringextractor.variable.DiscardedRegexMatchVariable;
+import io.github.tushar.naik.stringextractor.variable.ExactMatchVariable;
+import io.github.tushar.naik.stringextractor.variable.LastVariable;
+import io.github.tushar.naik.stringextractor.variable.RegexMatchVariable;
+import io.github.tushar.naik.stringextractor.variable.StaticAttachVariable;
+import io.github.tushar.naik.stringextractor.variable.Variable;
+import io.github.tushar.naik.stringextractor.variable.VariableVisitor;
 import lombok.Value;
 import lombok.val;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -63,6 +70,16 @@ public class StringExtractor implements Extractor {
         public Boolean visit(final DiscardedExactMatchVariable discardedExactMatchVariable) {
             return false;
         }
+
+        @Override
+        public Boolean visit(final ContextMappedVariable contextMappedVariable) {
+            return false;
+        }
+
+        @Override
+        public Boolean visit(final StaticAttachVariable staticAttachVariable) {
+            return false;
+        }
     };
     /**
      * A visitor on the component, that returns true if applied on a {@link VariableComponent} typed object
@@ -81,7 +98,9 @@ public class StringExtractor implements Extractor {
     private final boolean failOnStringRemainingAfterExtraction;
     private final List<ParsedComponent> parsedComponents;
     private final int numberOfVariables;
-    private final Set<String> skippedVariables;
+    private final String skippedVariable;
+    private final String contextMappingVariable;
+    private final String staticAttachVariable;
 
     public StringExtractor(final String blueprint) throws BlueprintParseError {
         this(blueprint, false);
@@ -89,7 +108,7 @@ public class StringExtractor implements Extractor {
 
     public StringExtractor(final String blueprint, final boolean failOnStringRemainingAfterExtraction)
             throws BlueprintParseError {
-        this(blueprint, '$', '{', ':', '}', failOnStringRemainingAfterExtraction, Collections.emptySet());
+        this(blueprint, '$', '{', ':', '}', failOnStringRemainingAfterExtraction, "", "", "");
     }
 
     /**
@@ -101,16 +120,19 @@ public class StringExtractor implements Extractor {
      * @param variableSuffix                       character that represents the suffix
      * @param failOnStringRemainingAfterExtraction set this to true if you want to ignore if there are dangling
      *                                             characters after the last variable
-     * @param skippedVariables
+     * @param skippedVariable
      * @throws BlueprintParseError any error while parsing the blueprint
      */
+    @SuppressWarnings("java:S107")
     public StringExtractor(final String blueprint,
                            final char variableStart,
                            final char variablePrefix,
                            final char regexSeparator,
                            final char variableSuffix,
                            final boolean failOnStringRemainingAfterExtraction,
-                           final Set<String> skippedVariables) throws BlueprintParseError {
+                           final String skippedVariable,
+                           final String contextMappingVariable,
+                           final String staticAttachVariable) throws BlueprintParseError {
 
         /* a base condition check */
         checkCondition(variableStart == variablePrefix ||
@@ -123,7 +145,9 @@ public class StringExtractor implements Extractor {
 
         this.failOnStringRemainingAfterExtraction = failOnStringRemainingAfterExtraction;
         this.parsedComponents = new ArrayList<>();
-        this.skippedVariables = skippedVariables;
+        this.skippedVariable = skippedVariable;
+        this.contextMappingVariable = contextMappingVariable;
+        this.staticAttachVariable = staticAttachVariable;
 
         /* Just to be clear, I'm not proud of the code below, need to move it to a proper LL(1) language parser */
 
@@ -177,11 +201,12 @@ public class StringExtractor implements Extractor {
     /**
      * perform extractions from a source string using the compiled blueprint
      *
-     * @param source source string
+     * @param source     source string
+     * @param contextMap a context that acn be passed and used for replacing values during extraction
      * @return result after extraction
      */
     @Override
-    public ExtractionResult extractFrom(final String source) {
+    public ExtractionResult extractFrom(final String source, final Map<String, String> contextMap) {
         final Map<String, Object> extractions = new HashMap<>(numberOfVariables);
 
         /* drain or string_yet_to_be_parsed represents how much of the string is remaining. We start with the source */
@@ -193,7 +218,7 @@ public class StringExtractor implements Extractor {
             val finalDrain = drain;
 
             Optional<ExtractedResult> extractedResult =
-                    parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain));
+                    parsedComponent.accept(generateDrainFromComponent(extractions, finalDrain, contextMap));
             if (!extractedResult.isPresent()) {
                 return ExtractionResult.error();
             }
@@ -240,43 +265,60 @@ public class StringExtractor implements Extractor {
         checkCondition(variableRegexSplits.length == 0, BlueprintParseErrorCode.EMPTY_VARIABLE_REGEX);
 
 
+        final String lhs = variableRegexSplits[0];
+
+        /* if only lhs exists, it has to be the last variable */
         if (variableRegexSplits.length == 1) {
-            return new LastVariable(variableRegexSplits[0]);
+            return new LastVariable(lhs);
         }
 
-        if (Utils.isNullOrEmpty(variableRegexSplits[0])
-                && !Utils.isNullOrEmpty(variableRegexSplits[1])) {
-            if (!STR_WITH_SPECIAL_CHARACTERS.matcher(variableRegexSplits[1]).find()) {
-                return new DiscardedExactMatchVariable(variableRegexSplits[1]);
+        final String rhs = variableRegexSplits[1];
+
+        /* if lhs is empty but rhs is provided, it is meant for some form of discarded variable (remove the matched
+        value from source string) */
+        if (Utils.isNullOrEmpty(lhs)
+                && !Utils.isNullOrEmpty(rhs)) {
+            if (!STR_WITH_SPECIAL_CHARACTERS.matcher(rhs).find()) {
+                return new DiscardedExactMatchVariable(rhs);
             }
             try {
-                val compile = Pattern.compile(variableRegexSplits[1]);
+                val compile = Pattern.compile(rhs);
                 return new DiscardedRegexMatchVariable(compile);
             } catch (PatternSyntaxException e) {
-                return new DiscardedExactMatchVariable(variableRegexSplits[1]);
+                return new DiscardedExactMatchVariable(rhs);
             }
+        }
+
+        if (lhs.equals(contextMappingVariable)) {
+            return new ContextMappedVariable(rhs);
+        }
+
+        if (lhs.equals(staticAttachVariable)) {
+            return new StaticAttachVariable(rhs);
         }
 
         try {
-            if (!STR_WITH_SPECIAL_CHARACTERS.matcher(variableRegexSplits[1]).find()) {
-                return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
+            /* very naive way of checking if the rhs is a regex */
+            if (!STR_WITH_SPECIAL_CHARACTERS.matcher(rhs).find()) {
+                return new ExactMatchVariable(lhs, rhs);
             }
-            val compile = Pattern.compile(variableRegexSplits[1]);
-            return new RegexMatchVariable(variableRegexSplits[0], compile);
+            val compile = Pattern.compile(rhs);
+            return new RegexMatchVariable(lhs, compile);
         } catch (PatternSyntaxException exception) {
-            return new ExactMatchVariable(variableRegexSplits[0], variableRegexSplits[1]);
+            return new ExactMatchVariable(lhs, rhs);
         }
     }
 
     private ParsedComponentVisitor<Optional<ExtractedResult>> generateDrainFromComponent(
             final Map<String, Object> extractions,
-            final String drain) {
+            final String drain,
+            final Map<String, String> contextMap) {
         return new ParsedComponentVisitor<Optional<ExtractedResult>>() {
             @Override
             public Optional<ExtractedResult> visit(final ExactMatchComponent exactMatchComponent) {
                 if (drain.startsWith(exactMatchComponent.getCharacters())) {
                     val remainingString = drain.substring(exactMatchComponent.getCharacters().length());
-                    return Optional.of(new ExtractedResult(exactMatchComponent.getCharacters(), remainingString));
+                    return ExtractedResult.of(exactMatchComponent.getCharacters(), remainingString);
                 }
                 return Optional.empty();
             }
@@ -296,13 +338,13 @@ public class StringExtractor implements Extractor {
                         if (matcher.find()) {
                             val firstMatch = matcher.group(0);
                             String extraction = "";
-                            if (skippedVariables.contains(regexMatchVariable.getVariableName())) {
+                            if (skippedVariable.equals(regexMatchVariable.getVariableName())) {
                                 extraction = firstMatch;
                             } else {
                                 extractions.put(regexMatchVariable.getVariableName(), firstMatch);
                             }
                             val remainingString = drain.substring(firstMatch.length());
-                            return Optional.of(new ExtractedResult(extraction, remainingString));
+                            return ExtractedResult.of(extraction, remainingString);
                         }
                         return Optional.empty();
                     }
@@ -311,7 +353,7 @@ public class StringExtractor implements Extractor {
                     public Optional<ExtractedResult> visit(final ExactMatchVariable exactMatchVariable) {
                         if (drain.startsWith(exactMatchVariable.getMatchString())) {
                             String extraction = "";
-                            if (skippedVariables.contains(exactMatchVariable.getVariableName())) {
+                            if (skippedVariable.equals(exactMatchVariable.getVariableName())) {
                                 extraction = exactMatchVariable.getMatchString();
                             } else {
                                 extractions.put(exactMatchVariable.getVariableName(),
@@ -319,7 +361,7 @@ public class StringExtractor implements Extractor {
                             }
                             extractions.put(exactMatchVariable.getVariableName(), exactMatchVariable.getMatchString());
                             val remainingString = drain.substring(exactMatchVariable.getMatchString().length());
-                            return Optional.of(new ExtractedResult(extraction, remainingString));
+                            return ExtractedResult.of(extraction, remainingString);
                         }
                         return Optional.empty();
                     }
@@ -332,7 +374,7 @@ public class StringExtractor implements Extractor {
                         if (matcher.find()) {
                             val firstMatch = matcher.group(0);
                             val remainingString = drain.substring(firstMatch.length());
-                            return Optional.of(new ExtractedResult("", remainingString));
+                            return ExtractedResult.of("", remainingString);
                         }
                         return Optional.empty();
                     }
@@ -341,13 +383,13 @@ public class StringExtractor implements Extractor {
                     public Optional<ExtractedResult> visit(final LastVariable lastVariable) {
                         if (!Utils.isNullOrEmpty(drain)) {
                             String extraction = "";
-                            if (skippedVariables.contains(lastVariable.getVariableName())) {
+                            if (skippedVariable.equals(lastVariable.getVariableName())) {
                                 extraction = drain;
                             } else {
                                 extractions.put(lastVariable.getVariableName(), drain);
                             }
                             extractions.put(lastVariable.getVariableName(), drain);
-                            return Optional.of(new ExtractedResult(extraction, ""));
+                            return ExtractedResult.of(extraction, "");
                         }
                         return Optional.empty();
                     }
@@ -358,9 +400,23 @@ public class StringExtractor implements Extractor {
                         if (drain.startsWith(discardedExactMatchVariable.getMatchString())) {
                             val remainingString = drain.substring(
                                     discardedExactMatchVariable.getMatchString().length());
-                            return Optional.of(new ExtractedResult("", remainingString));
+                            return ExtractedResult.of("", remainingString);
                         }
                         return Optional.empty();
+                    }
+
+                    @Override
+                    public Optional<ExtractedResult> visit(final ContextMappedVariable contextMappedVariable) {
+                        if (contextMap != null &&
+                                contextMap.containsKey(contextMappedVariable.getMappingString())) {
+                            return ExtractedResult.of(contextMap.get(contextMappedVariable.getMappingString()), drain);
+                        }
+                        return ExtractedResult.of("", drain);
+                    }
+
+                    @Override
+                    public Optional<ExtractedResult> visit(final StaticAttachVariable staticAttachVariable) {
+                        return ExtractedResult.of(staticAttachVariable.getStaticAttachString(), drain);
                     }
                 };
             }
@@ -378,5 +434,9 @@ public class StringExtractor implements Extractor {
     private static class ExtractedResult {
         String extraction;
         String drain;
+
+        public static Optional<ExtractedResult> of(String extraction, String drain) {
+            return Optional.of(new ExtractedResult(extraction, drain));
+        }
     }
 }
