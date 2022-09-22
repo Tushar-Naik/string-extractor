@@ -7,5 +7,6 @@ public interface Extractor {
     default ExtractionResult extractFrom(String source) {
         return extractFrom(source, Collections.emptyMap());
     }
+
     ExtractionResult extractFrom(String source, Map<String, String> contextMap);
 }

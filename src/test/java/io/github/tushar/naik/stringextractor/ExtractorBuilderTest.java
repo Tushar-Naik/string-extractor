@@ -19,8 +19,7 @@ class ExtractorBuilderTest {
                 .blueprint("Bruno mars says, when i see your #@@what:[a-z]+^^")
                 .build();
 
-        final ExtractionResult extractionResult = extractor.extractFrom("Bruno mars says, when i see your face",
-                                                                        Collections.emptyMap());
+        final ExtractionResult extractionResult = extractor.extractFrom("Bruno mars says, when i see your face");
         TestUtils.assertMapEquals(ImmutableMap.of("what", "face"), extractionResult.getExtractions());
         assertEquals("Bruno mars says, when i see your ", extractionResult.getExtractedString());
     }

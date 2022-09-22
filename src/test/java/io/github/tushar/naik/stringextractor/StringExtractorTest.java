@@ -286,7 +286,7 @@ class StringExtractorTest {
     void testNoMatchUnhappyScenarios(final String blueprint,
                                      final String source) throws BlueprintParseError {
         final StringExtractor stringExtractor = new StringExtractor(blueprint, true);
-        final ExtractionResult extractionResult = stringExtractor.extractFrom(source, Collections.emptyMap());
+        final ExtractionResult extractionResult = stringExtractor.extractFrom(source);
         assertTrue(extractionResult.isError());
         assertNull(extractionResult.getExtractions());
         assertNull(extractionResult.getExtractedString());

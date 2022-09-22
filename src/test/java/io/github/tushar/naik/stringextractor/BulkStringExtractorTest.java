@@ -8,11 +8,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BulkStringExtractorTest {
     static Extractor extractor;
@@ -32,36 +33,6 @@ class BulkStringExtractorTest {
                                 + ".consumer-fetch-manager-metrics.consumer-kratos-shadow-processor-1.${{topic:[^"
                                 + ".]+}}${{:.[0-9]+}}.records-lead-min"
                                 )).build();
-    }
-
-    @ParameterizedTest
-    @MethodSource("bulkExtractions")
-    void testBulkExtractions(final String source,
-                             final String result,
-                             final Map<String, Object> extractedMap,
-                             final boolean error) {
-        final ExtractionResult extractionResult = extractor.extractFrom(source, Collections.emptyMap());
-        if (error) {
-            assertTrue(extractionResult.isError());
-            return;
-        }
-        assertEquals(result, extractionResult.getExtractedString());
-        TestUtils.assertMapEquals(extractedMap, extractionResult.getExtractions());
-        assertFalse(extractionResult.isError());
-    }
-
-
-    @ParameterizedTest
-    @MethodSource("bulkExtractions")
-    void perfTest(final String source,
-                  final String result,
-                  final Map<String, Object> extractedMap,
-                  final boolean error) {
-        PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
-        float evaluationTime = performanceEvaluator
-                .evaluateTime(10000, () -> extractor.extractFrom(source, Collections.emptyMap()));
-        System.out.printf("%s evaluations for blueprint took %fms\n", 10000, evaluationTime);
-        Assertions.assertTrue(evaluationTime < 500);
     }
 
     public static Stream<Arguments> bulkExtractions() {
@@ -112,5 +83,34 @@ class BulkStringExtractorTest {
                         ImmutableMap.of(),
                         true)
                         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("bulkExtractions")
+    void testBulkExtractions(final String source,
+                             final String result,
+                             final Map<String, Object> extractedMap,
+                             final boolean error) {
+        final ExtractionResult extractionResult = extractor.extractFrom(source);
+        if (error) {
+            assertTrue(extractionResult.isError());
+            return;
+        }
+        assertEquals(result, extractionResult.getExtractedString());
+        TestUtils.assertMapEquals(extractedMap, extractionResult.getExtractions());
+        assertFalse(extractionResult.isError());
+    }
+
+    @ParameterizedTest
+    @MethodSource("bulkExtractions")
+    void perfTest(final String source,
+                  final String result,
+                  final Map<String, Object> extractedMap,
+                  final boolean error) {
+        PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
+        float evaluationTime = performanceEvaluator
+                .evaluateTime(10000, () -> extractor.extractFrom(source));
+        System.out.printf("%s evaluations for blueprint took %fms\n", 10000, evaluationTime);
+        Assertions.assertTrue(evaluationTime < 500);
     }
 }
